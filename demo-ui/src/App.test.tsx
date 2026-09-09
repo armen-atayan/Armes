@@ -142,8 +142,12 @@ describe('T2 personal assistant UI', () => {
     localStorage.setItem('t2.activeSession', 'demo_1')
     render(<App />)
     await screen.findByText('Набираем номер')
-    MockSocket.instance.emit(event(5, 'owner.question', { request_id: 'r1', question: 'Подтвердить встречу на 10:00?', context: 'Завтра' }))
+    MockSocket.instance.emit(event(5, 'owner.question', { request_id: 'r1', question: 'Подтвердить встречу на 10:00?', context: 'Завтра', options: ['Да', 'Нет'] }))
     expect(await screen.findByText('Нужно ваше решение')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Другое' }))
+    expect(screen.getByLabelText('Ваш ответ')).toHaveFocus()
+    await userEvent.click(screen.getByRole('button', { name: 'Назад' }))
+    expect(screen.getByRole('button', { name: 'Да' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Другое' }))
     await userEvent.type(screen.getByLabelText('Ваш ответ'), 'Предложить 11:00')
     await userEvent.click(screen.getByRole('button', { name: 'Отправить' }))
@@ -151,13 +155,22 @@ describe('T2 personal assistant UI', () => {
     expect(screen.getByText('Предложить 11:00')).toBeInTheDocument()
   })
 
-  it('sends a custom owner answer with Command Enter', async () => {
+  it.each([
+    ['missing', undefined],
+    ['empty', []],
+    ['blank', ['', '  ', '\t']],
+  ])('immediately focuses free text for %s owner options and submits with Command Enter', async (_, options) => {
     localStorage.setItem('t2.activeSession', 'demo_1')
     render(<App />)
     await screen.findByText('Набираем номер')
-    MockSocket.instance.emit(event(5, 'owner.question', { request_id: 'r1', question: 'Что ответить?', context: '' }))
-    await userEvent.click(await screen.findByRole('button', { name: 'Другое' }))
-    const answer = screen.getByLabelText('Ваш ответ')
+    MockSocket.instance.emit(event(5, 'owner.question', { request_id: 'r1', question: 'Что ответить?', context: '', options }))
+    const answer = await screen.findByLabelText('Ваш ответ')
+    expect(answer.tagName).toBe('TEXTAREA')
+    expect(answer).toHaveFocus()
+    for (const name of ['Подтвердить', 'Отказаться', 'Другое', 'Назад']) {
+      expect(screen.queryByRole('button', { name })).not.toBeInTheDocument()
+    }
+    expect(screen.getByRole('button', { name: 'Отправить' })).toBeDisabled()
     await userEvent.type(answer, 'Предложить 11:00')
     fireEvent.keyDown(answer, { key: 'Enter', metaKey: true })
     await waitFor(() => expect(fetch).toHaveBeenCalledWith('/api/calls/demo_1/owner-response', expect.objectContaining({ body: expect.stringContaining('Предложить 11:00') })))
@@ -173,6 +186,8 @@ describe('T2 personal assistant UI', () => {
     }))
     expect(await screen.findByRole('button', { name: 'Обычный зал' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'VIP-зал' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Другое' })).toBeInTheDocument()
+    expect(screen.queryByLabelText('Ваш ответ')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Подтвердить' })).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'VIP-зал' }))
     await waitFor(() => expect(fetch).toHaveBeenCalledWith('/api/calls/demo_1/owner-response', expect.objectContaining({
@@ -208,7 +223,8 @@ describe('T2 personal assistant UI', () => {
     render(<App />)
     await screen.findByText('Набираем номер')
     MockSocket.instance.emit(event(5, 'owner.question', { request_id: 'r1', question: 'Подтвердить?', context: '' }))
-    await userEvent.click(await screen.findByRole('button', { name: 'Подтвердить' }))
+    await userEvent.type(await screen.findByLabelText('Ваш ответ'), 'Да')
+    await userEvent.click(screen.getByRole('button', { name: 'Отправить' }))
     MockSocket.instance.emit(event(6, 'owner.answer', { request_id: 'r1', response: 'Да' }))
     MockSocket.instance.emit(event(7, 'owner.answer', { request_id: 'r1', answer: 'Да', action: 'instruct' }))
     await waitFor(() => expect(screen.getAllByText('Да')).toHaveLength(1))
