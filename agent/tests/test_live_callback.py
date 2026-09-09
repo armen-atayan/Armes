@@ -2,6 +2,7 @@ import asyncio
 import json
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 
@@ -107,3 +108,22 @@ async def test_agent_asks_owner_and_returns_instruction(monkeypatch, tmp_path):
     assert result['action'] == 'approve'
     assert result['response'] == 'yes'
     assert result['question'] == sent[0][1]
+@pytest.mark.asyncio
+async def test_owner_continuation_does_not_restart_the_conversation(monkeypatch):
+    session = Mock()
+    session.interrupt = AsyncMock()
+
+    await gen2b_agent.resume_owner_turn(session, {
+        "question": "На сколько клиентов оформить запись?",
+        "response": "20",
+        "instruction": "Передай ответ Армена в этом же звонке.",
+    })
+
+    session.generate_reply.assert_called_once()
+    kwargs = session.generate_reply.call_args.kwargs
+    instructions = kwargs["instructions"]
+    assert "Разговор уже начат" in instructions
+    assert "не здоровайся" in instructions
+    assert "не представляйся" in instructions
+    assert "не повторяй исходный запрос" in instructions
+    assert "Сразу передай только ответ Армена" in instructions

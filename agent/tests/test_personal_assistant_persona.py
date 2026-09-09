@@ -132,21 +132,23 @@ def test_persona_trunk_is_selected_before_global_default():
     assert call_with_persona.resolve_sip_number("78005553535", {"sip_number": "74951804257"}) == "78005553535"
 
 
-def test_unknown_guest_count_requires_owner_callback_in_rendered_prompt():
+def test_unknown_guest_count_waits_for_callee_to_require_it():
     config = gen2b_agent.resolve_call_config(
         json.dumps(
             {
                 "persona": "armen_personal_assistant",
                 "target_name": "ресторан Birch",
                 "task": "забронировать стол 9 сентября в 20:00",
-                "task_details": "Количество гостей не указано: уточнить через ask_owner.",
+                "task_details": "",
             },
             ensure_ascii=False,
         )
     )
 
     prompt = config["system_prompt"].lower()
-    assert "если число там не указано, немедленно вызови ask_owner" in prompt
+    assert "не вызывай ask_owner заранее только потому, что параметр отсутствует" in prompt
+    assert "сначала озвучь основной запрос" in prompt
+    assert "собеседник явно запросил этот параметр" in prompt
     assert "не произноси никакое число" in prompt
     assert "нельзя угадывать" in prompt
 
