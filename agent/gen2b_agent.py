@@ -115,6 +115,63 @@ _openai_tts.AUDIO_STREAM_MODELS.add("gen2tts")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("gen2b-agent")
 
+
+def attach_callee_first_greeting(
+    session: AgentSession,
+    instructions: str,
+    *,
+    protect_speech: Callable | None = None,
+) -> None:
+    """Recover once when a committed caller turn produces neither text nor tools.
+
+    LiveKit completes an empty LLM stream successfully. Wait for the whole
+    SpeechHandle (including tools), not the thinking -> listening transition.
+    Transcription finals alone are not committed turns (Krisp may discard them).
+    """
+    caller_committed = False
+    finished = False
+
+    def on_item(event: Any) -> None:
+        nonlocal caller_committed, finished
+        item = event.item
+        if not (getattr(item, "text_content", "") or "").strip():
+            return
+        if item.role == "user":
+            caller_committed = True
+        elif item.role == "assistant":
+            finished = True
+
+    def on_done(handle: Any) -> None:
+        nonlocal finished
+        if finished or not caller_committed or handle.interrupted:
+            return
+        if any(item.type == "function_call" for item in handle.chat_items):
+            finished = True
+            return
+        # Set before generate_reply: it emits speech_created synchronously.
+        finished = True
+        logger.warning("CALLEE_FIRST_GREETING_FALLBACK: automatic response had no speech or tools")
+        greeting = session.generate_reply(
+            instructions=instructions,
+            tool_choice="none",
+            allow_interruptions=False,
+        )
+        mark_no_rescue(greeting)
+        if protect_speech is not None:
+            protect_speech(greeting)
+
+    def on_speech(event: Any) -> None:
+        if not finished and event.source == "generate_reply":
+            event.speech_handle.add_done_callback(on_done)
+
+    def on_close(event: Any) -> None:
+        nonlocal finished
+        finished = True
+
+    session.on("conversation_item_added", on_item)
+    session.on("speech_created", on_speech)
+    session.on("close", on_close)
+
 # Make question punctuation sufficiently emphatic for Gen2TTS to retain Russian
 # interrogative intonation. Keep an unfinished trailing run between streamed LLM
 # chunks so `?` + `!` is normalized once, without buffering ordinary text.
@@ -1399,6 +1456,13 @@ async def entrypoint(ctx: JobContext):
                 "owner.instruction.accepted",
                 {"instruction_id": instruction_id},
             )
+
+    if call_config["wait_for_user_first"] and call_config["persona_key"] == "armen_personal_assistant":
+        attach_callee_first_greeting(
+            session,
+            call_config["greeting_instructions"],
+            protect_speech=interrupt_detector.protect_speech if krisp_active else None,
+        )
 
     if krisp_active:
         await session.start(
