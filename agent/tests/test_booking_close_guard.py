@@ -23,6 +23,63 @@ def agent_with_text(text, enabled=True):
 
 
 @pytest.mark.asyncio
+async def test_production_booking_confirmation_survives_three_final_fragments():
+    # demo_7c9319d611abb17b: these are finals within ONE callee turn.
+    from livekit.agents.llm import ChatMessage
+    a = agent_with_text('')
+    a._chat_ctx.add_message(role='assistant', content='Запишите, пожалуйста, на имя Армен')
+    fragments = [
+        'Хорошо записываю на имя армен.',
+        'На завтра к ирине на двадцать ноль ноль.',
+        'Спасибо.',
+    ]
+    for text in fragments:
+        a._record_callee_final(text)
+    await a.on_user_turn_completed(
+        a.chat_ctx.copy(), ChatMessage(role='user', content=[' '.join(fragments)]))
+    assert a._latest_user_text == 'Спасибо.'
+
+    await g.Gen2BAssistant.finalize_call._func(
+        a, SimpleNamespace(), outcome='agreed', summary='Запись подтверждена.')
+
+    assert a._pending_outcome is not None
+    assert a._pending_outcome['outcome'] == 'agreed'
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('earlier_reply', ['Да', 'Подтверждаю.'])
+async def test_prior_turn_yes_cannot_authorize_later_unconfirmed_turn(earlier_reply):
+    from livekit.agents.llm import ChatMessage
+    a = agent_with_text('')
+    a._record_callee_final(earlier_reply)
+    await a.on_user_turn_completed(
+        a.chat_ctx.copy(), ChatMessage(role='user', content=[earlier_reply]))
+    assert a._booking_close_block('agreed') is None
+    a._chat_ctx.add_message(role='assistant', content='Запишите, пожалуйста, на имя Армен')
+    a._record_callee_final('Спасибо.')
+    # Must reject even before the new turn is committed (e.g. during playout).
+    assert a._booking_close_block('agreed') is not None
+    await a.on_user_turn_completed(
+        a.chat_ctx.copy(), ChatMessage(role='user', content=['Спасибо.']))
+
+    await g.Gen2BAssistant.finalize_call._func(
+        a, SimpleNamespace(), outcome='agreed', summary='Запись подтверждена.')
+
+    assert a._pending_outcome is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('last_fragment', ['Нет, не записывайте.', 'На какое имя?'])
+async def test_later_fragment_can_veto_confirmation_in_same_turn(last_fragment):
+    a = agent_with_text('')
+    a._record_callee_final('Подтверждаю.')
+    a._record_callee_final(last_fragment)
+    await g.Gen2BAssistant.finalize_call._func(
+        a, SimpleNamespace(), outcome='agreed', summary='Запись подтверждена.')
+    assert a._pending_outcome is None
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize('text',[
  'А подскажите пожалуйста вас сколько чс будет.', 'На сколько человек?',
  'Онаопиш.', 'Да, на сколько человек?', 'Нет, мест нет.',
@@ -138,11 +195,14 @@ async def test_production_positive_reply_does_not_force_duplicate_confirmation()
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('earlier_reply', ['Да.', 'Да есть.'])
-async def test_owner_permission_cannot_reuse_earlier_callee_yes(monkeypatch, tmp_path, earlier_reply):
+@pytest.mark.parametrize('earlier_reply', ['Да.', 'Да есть.', 'Подтверждаю.'])
+@pytest.mark.parametrize('post_owner_reply', ['', 'Спасибо.'])
+async def test_owner_permission_cannot_reuse_earlier_callee_yes(
+        monkeypatch, tmp_path, earlier_reply, post_owner_reply):
     # Follow-up demo_3b91d08158adf0e7: permission to use the name never
     # reached the restaurant. Use an otherwise accepted yes to expose stale evidence.
     a = agent_with_text(earlier_reply)
+    a._record_callee_final(earlier_reply)
     a._pending_outcome = {'outcome': 'agreed', 'summary': 'Previous agreement'}
     monkeypatch.setattr(g, 'LIVE_CALLBACK_DIR', tmp_path)
     monkeypatch.setattr(g, 'send_live_callback_to_telegram', lambda *args: 123)
@@ -154,7 +214,10 @@ async def test_owner_permission_cannot_reuse_earlier_callee_yes(monkeypatch, tmp
     await a._owner_continuation_task
     assert a._pending_outcome is None
     a._chat_ctx.add_message(role='user', content='Ответ Армена: Указать только Армен')
-    a._record_callee_final('')
+    a._record_callee_final(post_owner_reply)
+    if post_owner_reply:
+        await a.on_user_turn_completed(
+            a.chat_ctx.copy(), g.ChatMessage(role='user', content=[post_owner_reply]))
     await g.Gen2BAssistant.finalize_call._func(
         a, SimpleNamespace(), outcome='agreed', summary='Бронь оформлена на имя Армен.')
     assert a._pending_outcome is None

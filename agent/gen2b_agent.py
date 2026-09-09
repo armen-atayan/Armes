@@ -77,7 +77,7 @@ from owner_clarification import OWNER_CLARIFICATION_POLICY, decision_result
 from booking_close_guard import booking_close_reason, callee_requested_hangup
 from farewell_hangup import FarewellHangupController
 from demo_events import emit_demo_event
-from livekit.agents.llm import ToolFlag
+from livekit.agents.llm import ChatContext, ChatMessage, ToolFlag
 
 # Framework-level patches from the ML-team plugin. Must run once at import
 # time, before any AgentSession is constructed:
@@ -721,6 +721,8 @@ class Gen2BAssistant(Agent):
         self._transcript_emitter = transcript_emitter
         self._tts_intonation = tts_intonation
         self._latest_user_text: str | None = None
+        self._callee_turn_text: str | None = None
+        self._callee_turn_completed = False
         self._booking_owner_reply_pending = False
         self._pending_outcome: dict[str, Any] | None = None
         self._web_outcome_published = False
@@ -777,10 +779,23 @@ class Gen2BAssistant(Agent):
                     {"utterance_id": utterance_id, "text": "".join(raw_chunks)},
                 )
 
+    async def on_user_turn_completed(
+        self, turn_ctx: ChatContext, new_message: ChatMessage
+    ) -> None:
+        # SDK calls this after accumulating STT finals, before the LLM/tools.
+        # Keep the evidence for this response; the next final starts a new turn.
+        self._callee_turn_completed = True
+
     def _record_callee_final(self, text: str) -> None:
         """Only real callee STT, never synthetic owner user_input, advances consent."""
         self._latest_user_text = text
         if text.strip():
+            if self._callee_turn_completed:
+                self._callee_turn_text = None
+                self._callee_turn_completed = False
+            self._callee_turn_text = " ".join(
+                part for part in (self._callee_turn_text, text.strip()) if part
+            )
             self._booking_owner_reply_pending = False
 
     def _booking_close_block(self, outcome: str) -> str | None:
@@ -790,7 +805,9 @@ class Gen2BAssistant(Agent):
             return ("Не завершай звонок: решение Армена ещё не подтверждено собеседником. "
                     "Передай разрешённые сведения ресторану и дождись его ответа; "
                     "прежнее согласие не подтверждает новые детали.")
-        text = self._latest_user_text
+        text = self._callee_turn_text
+        if text is None:
+            text = self._latest_user_text
         if text is None:
             text = next((item.text_content for item in reversed(self.chat_ctx.items)
                          if getattr(item, "role", None) == "user"), "")
@@ -876,6 +893,7 @@ class Gen2BAssistant(Agent):
                 # An earlier yes cannot confirm details just supplied by the owner.
                 # Also discard any staged result that predates this decision.
                 self._booking_owner_reply_pending = True
+                self._callee_turn_text = ""
                 self._pending_outcome = None
             logger.info("OWNER_QUESTION resolved room=%s request=%s action=%s",
                         self._room_name, request_id, decision["action"])
