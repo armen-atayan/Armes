@@ -1,0 +1,312 @@
+{
+  "candidates": {
+    "gemini_2_5_flash_none": {
+      "base": "https://ai-kz.gen2b.ai/v1",
+      "model": "gemini/gemini-2.5-flash",
+      "token_key": "max_tokens",
+      "temperature": 0.2
+    },
+    "gpt_5_6_luna_none": {
+      "base": "https://armes-resource.services.ai.azure.com/api/projects/armes/openai/v1",
+      "model": "gpt-5.6-luna",
+      "token_key": "max_completion_tokens"
+    }
+  },
+  "scenarios": {
+    "discovery": {
+      "title": "Tasdiqlangan suhbatdosh va birinchi discovery savoli",
+      "outputs": {
+        "gemini_2_5_flash_none": {
+          "ok": true,
+          "status": 200,
+          "text": "Bito ERP platformasi biznesingizning qaysi yo‘nalishlarida yordam berishi mumkinligini bilmoqchi edingiz?",
+          "ttft_s": 1.097,
+          "total_latency_s": 1.244,
+          "finish_reason": "stop",
+          "usage": {
+            "completion_tokens": 35,
+            "prompt_tokens": 317,
+            "total_tokens": 352,
+            "completion_tokens_details": {
+              "reasoning_tokens": 0,
+              "text_tokens": 35
+            },
+            "prompt_tokens_details": {
+              "text_tokens": 317
+            }
+          }
+        },
+        "gpt_5_6_luna_none": {
+          "ok": true,
+          "status": 200,
+          "text": "Bito ERP savdo, CRM, ombor, logistika, HR, ishlab chiqarish va analitikani boshqarishga yordam beradi. Sizni hozir eng ko‘p qiynayotgan jarayon qaysi?",
+          "ttft_s": 1.571,
+          "total_latency_s": 1.605,
+          "finish_reason": "stop",
+          "usage": {
+            "completion_tokens": 50,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 319,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cache_write_tokens": 0,
+              "cached_tokens": 0
+            },
+            "total_tokens": 369
+          }
+        }
+      }
+    },
+    "russian_caller": {
+      "title": "Ruscha gapirgan mijozga o‘zbekcha, bitta savolli javob",
+      "outputs": {
+        "gemini_2_5_flash_none": {
+          "ok": true,
+          "status": 200,
+          "text": "Uchta do‘kon va bitta ombor uchun Bito ERP platformasi savdo, ombor va logistika modullari orqali biznesingizni samarali boshqarishga yordam beradi.",
+          "ttft_s": 0.73,
+          "total_latency_s": 0.985,
+          "finish_reason": "stop",
+          "usage": {
+            "completion_tokens": 47,
+            "prompt_tokens": 271,
+            "total_tokens": 318,
+            "completion_tokens_details": {
+              "reasoning_tokens": 0,
+              "text_tokens": 47
+            },
+            "prompt_tokens_details": {
+              "text_tokens": 271
+            }
+          }
+        },
+        "gpt_5_6_luna_none": {
+          "ok": true,
+          "status": 200,
+          "text": "Bito ERP uchta do‘kon va bitta ombor uchun savdo hamda ombor hisobini markazlashtirishga yordam beradi. Hozir sizda eng katta muammo qaysi: qoldiq, savdo nazorati yoki hisobotlar?",
+          "ttft_s": 2.168,
+          "total_latency_s": 2.204,
+          "finish_reason": "stop",
+          "usage": {
+            "completion_tokens": 61,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 267,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cache_write_tokens": 0,
+              "cached_tokens": 0
+            },
+            "total_tokens": 328
+          }
+        }
+      }
+    },
+    "pricing_truth": {
+      "title": "Tasdiqlanmagan tarif detallarini to‘qimaslik",
+      "outputs": {
+        "gemini_2_5_flash_none": {
+          "ok": true,
+          "status": 200,
+          "text": "Start tarifining narxi saytda 300 000 so‘mdan boshlanadi. Bu narxning davri, foydalanuvchilar soni va qaysi modullar kirishi haqida qo‘shimcha ma’lumot berilmagan.",
+          "ttft_s": 1.07,
+          "total_latency_s": 1.339,
+          "finish_reason": "stop",
+          "usage": {
+            "completion_tokens": 61,
+            "prompt_tokens": 274,
+            "total_tokens": 335,
+            "completion_tokens_details": {
+              "reasoning_tokens": 0,
+              "text_tokens": 61
+            },
+            "prompt_tokens_details": {
+              "text_tokens": 274
+            }
+          }
+        },
+        "gpt_5_6_luna_none": {
+          "ok": true,
+          "status": 200,
+          "text": "Start tarifi 300 000 so‘mdan boshlanadi, ammo uning davri, foydalanuvchilar soni va modullar tarkibi hozircha tasdiqlanmagan. Sizga aniq ma’lumot berishimiz uchun ehtiyojingizni o‘rganib chiqaylikmi?",
+          "ttft_s": 1.611,
+          "total_latency_s": 1.645,
+          "finish_reason": "stop",
+          "usage": {
+            "completion_tokens": 71,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 265,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cache_write_tokens": 0,
+              "cached_tokens": 0
+            },
+            "total_tokens": 336
+          }
+        }
+      }
+    },
+    "demo_booking": {
+      "title": "Demo uchun keyingi qadam, soxta kalendar tasdig‘isiz",
+      "outputs": {
+        "gemini_2_5_flash_none": {
+          "ok": true,
+          "status": 200,
+          "text": "CRM va ombor modullari bo‘yicha demo o‘tkazishimiz mumkin. Payshanba kuni soat uchda bo‘sh vaqtimiz bor.",
+          "ttft_s": 0.718,
+          "total_latency_s": 0.923,
+          "finish_reason": "stop",
+          "usage": {
+            "completion_tokens": 38,
+            "prompt_tokens": 260,
+            "total_tokens": 298,
+            "completion_tokens_details": {
+              "reasoning_tokens": 0,
+              "text_tokens": 38
+            },
+            "prompt_tokens_details": {
+              "text_tokens": 260
+            }
+          }
+        },
+        "gpt_5_6_luna_none": {
+          "ok": true,
+          "status": 200,
+          "text": "CRM va ombor bo‘yicha demo tashkil qilishimiz mumkin, ammo hozircha payshanba soat 15:00 ga band qilinganini tasdiqlay olmayman. Telefon raqamingizni qoldirasizmi?",
+          "ttft_s": 1.508,
+          "total_latency_s": 1.516,
+          "finish_reason": "stop",
+          "usage": {
+            "completion_tokens": 54,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 254,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cache_write_tokens": 0,
+              "cached_tokens": 0
+            },
+            "total_tokens": 308
+          }
+        }
+      }
+    }
+  },
+  "judgments": {
+    "discovery": {
+      "mapping": {
+        "A": "gemini_2_5_flash_none",
+        "B": "gpt_5_6_luna_none"
+      },
+      "raw": {
+        "ok": true,
+        "text": "{\n  \"winner\": \"B\",\n  \"scores\": {\n    \"A\": 5,\n    \"B\": 9\n  },\n  \"reason_uz\": \"B varianti qisqa ma'lumot berib, mijozning muammosini aniqlovchi to'g'ri va ochiq kashfiyot (discovery) savolini bergan. A varianti esa biroz nofaol tuzilgan va mijoz o'zi savol bergandek noto'g'ri faraz qilgan.\"\n}",
+        "latency_s": 13.904
+      },
+      "verdict": {
+        "winner": "B",
+        "scores": {
+          "A": 5,
+          "B": 9
+        },
+        "reason_uz": "B varianti qisqa ma'lumot berib, mijozning muammosini aniqlovchi to'g'ri va ochiq kashfiyot (discovery) savolini bergan. A varianti esa biroz nofaol tuzilgan va mijoz o'zi savol bergandek noto'g'ri faraz qilgan."
+      }
+    },
+    "russian_caller": {
+      "mapping": {
+        "A": "gemini_2_5_flash_none",
+        "B": "gpt_5_6_luna_none"
+      },
+      "raw": {
+        "ok": true,
+        "text": "{\n  \"winner\": \"B\",\n  \"scores\": {\n    \"A\": 4,\n    \"B\": 9\n  },\n  \"reason_uz\": \"B varianti bitta savol berish talabini to'liq bajargan va mijozni muloqotga tortgan. A variantida esa umuman savol berilmagan.\"\n}",
+        "latency_s": 9.269
+      },
+      "verdict": {
+        "winner": "B",
+        "scores": {
+          "A": 4,
+          "B": 9
+        },
+        "reason_uz": "B varianti bitta savol berish talabini to'liq bajargan va mijozni muloqotga tortgan. A variantida esa umuman savol berilmagan."
+      }
+    },
+    "pricing_truth": {
+      "mapping": {
+        "A": "gpt_5_6_luna_none",
+        "B": "gemini_2_5_flash_none"
+      },
+      "raw": {
+        "ok": true,
+        "text": "{\n  \"winner\": \"A\",\n  \"scores\": {\n    \"A\": 10,\n    \"B\": 4\n  },\n  \"reason_uz\": \"A varianti bitta savol berish qoidasiga amal qilgan va muloqotni davom ettirish uchun mijozning ehtiyojini o'rganishni taklif qilgan. B variantida umuman savol yo'q va u suhbatni boshi berk ko'chaga kiritgan.\"\n}",
+        "latency_s": 12.35
+      },
+      "verdict": {
+        "winner": "A",
+        "scores": {
+          "A": 10,
+          "B": 4
+        },
+        "reason_uz": "A varianti bitta savol berish qoidasiga amal qilgan va muloqotni davom ettirish uchun mijozning ehtiyojini o'rganishni taklif qilgan. B variantida umuman savol yo'q va u suhbatni boshi berk ko'chaga kiritgan."
+      }
+    },
+    "demo_booking": {
+      "mapping": {
+        "A": "gpt_5_6_luna_none",
+        "B": "gemini_2_5_flash_none"
+      },
+      "raw": {
+        "ok": true,
+        "text": "{\n  \"winner\": \"A\",\n  \"scores\": {\n    \"A\": 10,\n    \"B\": 3\n  },\n  \"reason_uz\": \"A varianti soxta kalendar va'dasidan qochgan va suhbatni davom ettirish uchun bitta aniq savol bergan. B varianti esa umuman savol bermagan va aniq vaqtni va'da qilib, qoidalarni buzgan.\"\n}",
+        "latency_s": 13.821
+      },
+      "verdict": {
+        "winner": "A",
+        "scores": {
+          "A": 10,
+          "B": 3
+        },
+        "reason_uz": "A varianti soxta kalendar va'dasidan qochgan va suhbatni davom ettirish uchun bitta aniq savol bergan. B varianti esa umuman savol bermagan va aniq vaqtni va'da qilib, qoidalarni buzgan."
+      }
+    }
+  },
+  "summary": {
+    "wins": {
+      "gemini_2_5_flash_none": 0,
+      "gpt_5_6_luna_none": 4,
+      "tie": 0
+    },
+    "latency": {
+      "gemini_2_5_flash_none": {
+        "mean_ttft_s": 0.904,
+        "mean_total_latency_s": 1.123,
+        "reasoning_tokens_total": 0,
+        "successful": 4
+      },
+      "gpt_5_6_luna_none": {
+        "mean_ttft_s": 1.714,
+        "mean_total_latency_s": 1.743,
+        "reasoning_tokens_total": 0,
+        "successful": 4
+      }
+    }
+  }
+}

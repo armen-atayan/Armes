@@ -1,0 +1,245 @@
+{
+  "scenarios": [
+    {
+      "id": "discovery",
+      "title": "Tasdiqlangan suhbatdosh va birinchi discovery savoli",
+      "history": [
+        {
+          "role": "assistant",
+          "content": "Assalomu alaykum, bu Diyorbekmi?"
+        },
+        {
+          "role": "user",
+          "content": "Ha, men Diyorbekman."
+        },
+        {
+          "role": "assistant",
+          "content": "Men Uchqun, Bito ERP platformasining CEOsi bo‘laman. Biznes jarayonlarini avtomatlashtirish bo‘yicha qisqa suhbat uchun qo‘ng‘iroq qildim."
+        },
+        {
+          "role": "user",
+          "content": "Mayli, eshitaman."
+        }
+      ]
+    },
+    {
+      "id": "russian_caller",
+      "title": "Ruscha gapirgan mijozga o‘zbekcha, bitta savolli javob",
+      "history": [
+        {
+          "role": "assistant",
+          "content": "Sizning biznesingiz qaysi yo‘nalishda ishlaydi?"
+        },
+        {
+          "role": "user",
+          "content": "У нас три магазина одежды и один склад, учёт ведём в Excel."
+        }
+      ]
+    },
+    {
+      "id": "pricing_truth",
+      "title": "Tasdiqlanmagan tarif detallarini to‘qimaslik",
+      "history": [
+        {
+          "role": "user",
+          "content": "Start tarifi 300 ming so‘m ekan. Shu narx oylikmi, nechta foydalanuvchi va qaysi modullar kiradi?"
+        }
+      ]
+    },
+    {
+      "id": "demo_booking",
+      "title": "Demo uchun keyingi qadam, soxta kalendar tasdig‘isiz",
+      "history": [
+        {
+          "role": "user",
+          "content": "CRM va ombor bizga qiziq. Demoni payshanba kuni soat uchda qilaylik."
+        }
+      ]
+    }
+  ],
+  "candidates": {
+    "discovery": {
+      "terra": {
+        "ok": true,
+        "text": "Hozir biznesingizda qaysi jarayonni boshqarish eng ko‘p vaqt yoki qiyinchilik tug‘dirmoqda?",
+        "returned_model": "gpt-5.6-terra-2026-07-09",
+        "finish_reason": "stop",
+        "latency_s": 2.07
+      },
+      "gemini_flash": {
+        "ok": true,
+        "text": "Bito ERP sizning biznesingizdagi savdo, CRM, ombor, logistika, HR, ishlab chiqarish va analitika kabi barcha jarayonlarni bir platformada boshqarishga yordam beradi. Bu haqida qanday fikrdasiz?",
+        "returned_model": "gemini/gemini-2.5-flash",
+        "finish_reason": "stop",
+        "latency_s": 0.33
+      }
+    },
+    "russian_caller": {
+      "terra": {
+        "ok": true,
+        "text": "Bito savdo, ombor va tahlil jarayonlarini Excel o‘rniga yagona tizimda yuritishga yordam beradi. Hozir sizga eng ko‘p qaysi masala qiyinchilik tug‘dirmoqda?",
+        "returned_model": "gpt-5.6-terra-2026-07-09",
+        "finish_reason": "stop",
+        "latency_s": 2.2
+      },
+      "gemini_flash": {
+        "ok": true,
+        "text": "Uchta do‘kon va bitta ombor uchun Excelda hisob yuritish qiyinchilik tug‘dirishi mumkin. Bito ERP sizga qanday yordam berishi mumkin deb o‘ylaysiz?",
+        "returned_model": "gemini/gemini-2.5-flash",
+        "finish_reason": "stop",
+        "latency_s": 0.31
+      }
+    },
+    "pricing_truth": {
+      "terra": {
+        "ok": true,
+        "text": "Saytda Start tarifi 300 000 so‘mdan boshlanishi ko‘rsatilgan, ammo uning davri, foydalanuvchi soni va modullar tarkibini aniqlashtirish kerak. Sizga qaysi yo‘nalishlar — savdo, ombor, CRM yoki boshqalar — kerak?",
+        "returned_model": "gpt-5.6-terra-2026-07-09",
+        "finish_reason": "stop",
+        "latency_s": 2.56
+      },
+      "gemini_flash": {
+        "ok": true,
+        "text": "Start tarifining narxi saytda 300 000 so‘mdan boshlanishi ko‘rsatilgan. Bu narxning davri, foydalanuvchilar soni va qaysi modullar kirishi haqida qo‘shimcha ma’lumot berilmagan.",
+        "returned_model": "gemini/gemini-2.5-flash",
+        "finish_reason": "stop",
+        "latency_s": 0.31
+      }
+    },
+    "demo_booking": {
+      "terra": {
+        "ok": true,
+        "text": "Albatta, CRM va ombor bo‘yicha demo tashkil qilamiz. Payshanba soat 15:00 sizga qaysi vaqt mintaqasida qulay?",
+        "returned_model": "gpt-5.6-terra-2026-07-09",
+        "finish_reason": "stop",
+        "latency_s": 1.71
+      },
+      "gemini_flash": {
+        "ok": true,
+        "text": "CRM va ombor modullari bo‘yicha demo o‘tkazishimiz mumkin. Payshanba kuni soat uchda bo‘sh vaqtimiz bor.",
+        "returned_model": "gemini/gemini-2.5-flash",
+        "finish_reason": "stop",
+        "latency_s": 0.37
+      }
+    }
+  },
+  "judgments": {
+    "discovery": {
+      "mapping": {
+        "A": "terra",
+        "B": "gemini_flash"
+      },
+      "raw": {
+        "ok": true,
+        "text": "{\n  \"winner\": \"A\",\n  \"scores\": {\n    \"A\": 9,\n    \"B\": 4\n  },\n  \"reason_uz\": \"A javob qisqa va aniq 'discovery' savoli bo'lib, mijozning muammosini aniqlashga qaratilgan. B javob esa mijozni o'rganish o'rniga darhol mahsulot xususiyatlarini sanab o'tgan (feature dump), bu birinchi bosqich uchun noto'g'ri yondashuv.\"\n}",
+        "returned_model": "gemini/gemini-3.1-pro-preview",
+        "finish_reason": "stop",
+        "latency_s": 18.65
+      },
+      "verdict": {
+        "winner": "A",
+        "scores": {
+          "A": 9,
+          "B": 4
+        },
+        "reason_uz": "A javob qisqa va aniq 'discovery' savoli bo'lib, mijozning muammosini aniqlashga qaratilgan. B javob esa mijozni o'rganish o'rniga darhol mahsulot xususiyatlarini sanab o'tgan (feature dump), bu birinchi bosqich uchun noto'g'ri yondashuv."
+      }
+    },
+    "russian_caller": {
+      "mapping": {
+        "A": "gemini_flash",
+        "B": "terra"
+      },
+      "raw": {
+        "ok": true,
+        "text": "{\n  \"winner\": \"B\",\n  \"scores\": {\n    \"A\": 6,\n    \"B\": 9\n  },\n  \"reason_uz\": \"B javob telefon orqali sotuv uslubiga to'liq mos keladi. Mijozning muammosini aniqlashga qaratilgan ochiq va tabiiy savol berilgan. A javobdagi savol esa mijozga og'irlik tushiradi (mijoz tizim qanday yordam berishini bilmasligi mumkin) va sotuvda unchalik samarali emas.\"\n}",
+        "returned_model": "gemini/gemini-3.1-pro-preview",
+        "finish_reason": "stop",
+        "latency_s": 12.07
+      },
+      "verdict": {
+        "winner": "B",
+        "scores": {
+          "A": 6,
+          "B": 9
+        },
+        "reason_uz": "B javob telefon orqali sotuv uslubiga to'liq mos keladi. Mijozning muammosini aniqlashga qaratilgan ochiq va tabiiy savol berilgan. A javobdagi savol esa mijozga og'irlik tushiradi (mijoz tizim qanday yordam berishini bilmasligi mumkin) va sotuvda unchalik samarali emas."
+      }
+    },
+    "pricing_truth": {
+      "mapping": {
+        "A": "terra",
+        "B": "gemini_flash"
+      },
+      "raw": {
+        "ok": true,
+        "text": "{\n  \"winner\": \"A\",\n  \"scores\": {\n    \"A\": 9,\n    \"B\": 5\n  },\n  \"reason_uz\": \"A javob sotuv suhbati uslubiga juda mos, u faktlarni to'qimasdan, mijoz ehtiyojini aniqlash uchun bitta o'rinli savol bilan suhbatni davom ettirgan. B javobda esa savol yo'q, bu suhbatni boshi berk ko'chaga kiritib, to'xtatib qo'yadi.\"\n}",
+        "returned_model": "gemini/gemini-3.1-pro-preview",
+        "finish_reason": "stop",
+        "latency_s": 12.34
+      },
+      "verdict": {
+        "winner": "A",
+        "scores": {
+          "A": 9,
+          "B": 5
+        },
+        "reason_uz": "A javob sotuv suhbati uslubiga juda mos, u faktlarni to'qimasdan, mijoz ehtiyojini aniqlash uchun bitta o'rinli savol bilan suhbatni davom ettirgan. B javobda esa savol yo'q, bu suhbatni boshi berk ko'chaga kiritib, to'xtatib qo'yadi."
+      }
+    },
+    "demo_booking": {
+      "mapping": {
+        "A": "terra",
+        "B": "gemini_flash"
+      },
+      "raw": {
+        "ok": true,
+        "text": "{\n  \"winner\": \"A\",\n  \"scores\": {\n    \"A\": 5,\n    \"B\": 2\n  },\n  \"reason_uz\": \"B varianti 'bo'sh vaqtimiz bor' deb kalendar bo'yicha yolg'on tasdiq qoidasini buzdi va suhbatni savol bilan yakunlamadi. A varianti qoidani buzmadi, lekin 'vaqt mintaqasi' iborasi mahalliy suhbat uchun biroz g'alati va sun'iy eshitiladi. Shunga qaramay, qoidaga amal qilgani uchun A g'olib.\"\n}",
+        "returned_model": "gemini/gemini-3.1-pro-preview",
+        "finish_reason": "stop",
+        "latency_s": 20.69
+      },
+      "verdict": {
+        "winner": "A",
+        "scores": {
+          "A": 5,
+          "B": 2
+        },
+        "reason_uz": "B varianti 'bo'sh vaqtimiz bor' deb kalendar bo'yicha yolg'on tasdiq qoidasini buzdi va suhbatni savol bilan yakunlamadi. A varianti qoidani buzmadi, lekin 'vaqt mintaqasi' iborasi mahalliy suhbat uchun biroz g'alati va sun'iy eshitiladi. Shunga qaramay, qoidaga amal qilgani uchun A g'olib."
+      }
+    }
+  },
+  "judge_availability": {
+    "sol": {
+      "ok": false,
+      "status": 404,
+      "error": {
+        "type": "invalid_request_error",
+        "code": "DeploymentNotFound",
+        "message": "The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again."
+      },
+      "latency_s": 0.41
+    },
+    "gemini_3_1_pro": {
+      "ok": true,
+      "model": "gemini/gemini-3.1-pro-preview"
+    }
+  },
+  "summary": {
+    "gemini_3_1_pro_wins": {
+      "terra": 4,
+      "gemini_flash": 0,
+      "tie": 0
+    },
+    "sol_judge_status": {
+      "ok": false,
+      "status": 404,
+      "error": {
+        "type": "invalid_request_error",
+        "code": "DeploymentNotFound",
+        "message": "The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again."
+      },
+      "latency_s": 0.41
+    }
+  }
+}

@@ -1,0 +1,21 @@
+[Unit]
+Description=T2 Personal Assistant Demo API
+After=network-online.target gen2b-agent.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ubuntu/livekit-stack/demo-api
+EnvironmentFile=/home/ubuntu/livekit-stack/.env
+EnvironmentFile=/home/ubuntu/livekit-stack/.demo.env
+Environment=LIVEKIT_URL=ws://localhost:7880
+Environment=DEMO_DATA_DIR=/home/ubuntu/livekit-stack/demo-data
+Environment=LIVE_CALLBACK_DIR=/home/ubuntu/livekit-stack/live-callbacks
+Environment=CALL_RECORDINGS_DIR=/home/ubuntu/livekit-stack/call-recordings
+Environment=DEMO_FRONTEND_DIST=/home/ubuntu/livekit-stack/demo-ui/dist
+ExecStart=/home/ubuntu/livekit-stack/agent/venv/bin/python -m uvicorn app:app --host 127.0.0.1 --port 8099
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target

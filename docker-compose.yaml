@@ -1,0 +1,68 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: livekit-redis
+    restart: unless-stopped
+    network_mode: host
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  livekit-server:
+    image: livekit/livekit-server:latest
+    container_name: livekit-server
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./livekit.yaml:/etc/livekit.yaml:ro
+    command: ["--config", "/etc/livekit.yaml"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7880/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  livekit-sip:
+    image: livekit/sip:latest
+    container_name: livekit-sip
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      redis:
+        condition: service_healthy
+      livekit-server:
+        condition: service_healthy
+    volumes:
+      - ./sip-config.yaml:/sip/config.yaml:ro
+
+  livekit-egress:
+    image: livekit/egress:latest
+    container_name: livekit-egress
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - SYS_ADMIN  # required for chrome sandbox used to render room composite
+    depends_on:
+      redis:
+        condition: service_healthy
+      livekit-server:
+        condition: service_healthy
+    volumes:
+      - ./egress.yaml:/etc/egress.yaml:ro
+      - ./call-recordings:/out
+    environment:
+      - EGRESS_CONFIG_FILE=/etc/egress.yaml
+
+volumes:
+  redis-data:

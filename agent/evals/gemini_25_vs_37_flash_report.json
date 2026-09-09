@@ -1,0 +1,338 @@
+{
+  "candidates": {
+    "gemini_2_5_flash_none": {
+      "model": "gemini/gemini-2.5-flash",
+      "reasoning_effort": "none"
+    },
+    "gemini_3_7_flash_low": {
+      "model": "gemini-3.7-flash",
+      "reasoning_effort": "low"
+    }
+  },
+  "scenarios": {
+    "discovery": {
+      "title": "Tasdiqlangan suhbatdosh va birinchi discovery savoli",
+      "outputs": {
+        "gemini_2_5_flash_none": {
+          "ok": true,
+          "status": 200,
+          "text": "Bito ERP platformasi biznesingizga qanday yordam berishi mumkin deb o'ylaysiz?",
+          "ttft_s": 0.824,
+          "total_latency_s": 0.863,
+          "finish_reason": "stop",
+          "usage": {
+            "completion_tokens": 24,
+            "prompt_tokens": 317,
+            "total_tokens": 341,
+            "completion_tokens_details": {
+              "reasoning_tokens": 0,
+              "text_tokens": 24
+            },
+            "prompt_tokens_details": {
+              "text_tokens": 317
+            }
+          }
+        },
+        "gemini_3_7_flash_low": {
+          "ok": true,
+          "status": 200,
+          "text": "Biznesingizda asosan qaysi sohani, masalan savdo, ombor yoki ishlab chiqarishni tartibga solish qiziqroq?",
+          "ttft_s": 1.41,
+          "total_latency_s": 1.474,
+          "finish_reason": "stop",
+          "usage": {
+            "completion_tokens": 36,
+            "prompt_tokens": 317,
+            "total_tokens": 353,
+            "completion_tokens_details": {
+              "text_tokens": 36
+            },
+            "prompt_tokens_details": {
+              "text_tokens": 317
+            }
+          }
+        }
+      }
+    },
+    "russian_caller": {
+      "title": "Ruscha gapirgan mijozga o‘zbekcha, bitta savolli javob",
+      "outputs": {
+        "gemini_2_5_flash_none": {
+          "ok": true,
+          "status": 200,
+          "text": "Uchta do‘kon va bitta ombor uchun Bito ERP tizimi savdo, ombor va logistika jarayonlarini avtomatlashtirishga yordam beradi. Sizga qaysi tarif ko‘proq mos keladi deb o‘ylaysiz: Start yoki Individual?",
+          "ttft_s": 0.855,
+          "total_latency_s": 1.183,
+          "finish_reason": "stop",
+          "usage": {
+            "completion_tokens": 65,
+            "prompt_tokens": 271,
+            "total_tokens": 336,
+            "completion_tokens_details": {
+              "reasoning_tokens": 0,
+              "text_tokens": 65
+            },
+            "prompt_tokens_details": {
+              "text_tokens": 271
+            }
+          }
+        },
+        "gemini_3_7_flash_low": {
+          "ok": true,
+          "status": 200,
+          "text": "Bito ERP yordamida barcha do‘konlaringiz va omborni bitta tizimda birlashtirib, qoldiqlarni aniq nazorat qilishingiz mumkin. Hozirda Excelda hisob yuritishda eng asosiy muammoingiz nima bo‘lyapti?",
+          "ttft_s": 2.571,
+          "total_latency_s": 2.981,
+          "finish_reason": "stop",
+          "usage": {
+            "completion_tokens": 476,
+            "prompt_tokens": 271,
+            "total_tokens": 747,
+            "completion_tokens_details": {
+              "reasoning_tokens": 406,
+              "text_tokens": 70
+            },
+            "prompt_tokens_details": {
+              "text_tokens": 271
+            }
+          }
+        }
+      }
+    },
+    "pricing_truth": {
+      "title": "Tasdiqlanmagan tarif detallarini to‘qimaslik",
+      "outputs": {
+        "gemini_2_5_flash_none": {
+          "ok": true,
+          "status": 200,
+          "text": "Start tarifining narxi saytda 300 000 so‘mdan boshlanadi. Bu narx oylikmi yoki qaysi davrga tegishli ekanligi, shuningdek, foydalanuvchilar soni va modullar haqida qo‘shimcha ma’lumot olish uchun biz bilan bog‘lanishingizni tavsiya qilaman.",
+          "ttft_s": 0.883,
+          "total_latency_s": 1.336,
+          "finish_reason": "stop",
+          "usage": {
+            "completion_tokens": 85,
+            "prompt_tokens": 274,
+            "total_tokens": 359,
+            "completion_tokens_details": {
+              "reasoning_tokens": 0,
+              "text_tokens": 85
+            },
+            "prompt_tokens_details": {
+              "text_tokens": 274
+            }
+          }
+        },
+        "gemini_3_7_flash_low": {
+          "ok": true,
+          "status": 200,
+          "text": "Start tarifi 300 ming so‘mdan boshlanadi, lekin uning ani",
+          "ttft_s": 3.088,
+          "total_latency_s": 3.119,
+          "finish_reason": "length",
+          "usage": {
+            "completion_tokens": 496,
+            "prompt_tokens": 274,
+            "total_tokens": 770,
+            "completion_tokens_details": {
+              "reasoning_tokens": 477,
+              "text_tokens": 19
+            },
+            "prompt_tokens_details": {
+              "text_tokens": 274
+            }
+          }
+        }
+      }
+    },
+    "demo_booking": {
+      "title": "Demo uchun keyingi qadam, soxta kalendar tasdig‘isiz",
+      "outputs": {
+        "gemini_2_5_flash_none": {
+          "ok": true,
+          "status": 200,
+          "text": "CRM va ombor modullari bo‘yicha demo o‘tkazishimiz mumkin. Payshanba kuni soat uchda sizga qulay bo‘lsa, mutaxassislarimiz bilan bog‘lanib, aniq vaqtni kelishib olamiz.",
+          "ttft_s": 0.73,
+          "total_latency_s": 1.049,
+          "finish_reason": "stop",
+          "usage": {
+            "completion_tokens": 61,
+            "prompt_tokens": 260,
+            "total_tokens": 321,
+            "completion_tokens_details": {
+              "reasoning_tokens": 0,
+              "text_tokens": 61
+            },
+            "prompt_tokens_details": {
+              "text_tokens": 260
+            }
+          }
+        },
+        "gemini_3_7_flash_low": {
+          "ok": true,
+          "status": 200,
+          "text": "Ajoyib, CRM va ombor bo‘yicha imkoniyatlarimiz sizga juda mos keladi. Payshanba soat uchdagi vaqtni tasdiqlab, siz bilan bog‘lanishimiz uchun telefon raqamingizni qoldira olasizmi?",
+          "ttft_s": 2.239,
+          "total_latency_s": 2.369,
+          "finish_reason": "stop",
+          "usage": {
+            "completion_tokens": 285,
+            "prompt_tokens": 260,
+            "total_tokens": 545,
+            "completion_tokens_details": {
+              "reasoning_tokens": 225,
+              "text_tokens": 60
+            },
+            "prompt_tokens_details": {
+              "text_tokens": 260
+            }
+          }
+        }
+      }
+    }
+  },
+  "judgments": {
+    "discovery": {
+      "mapping": {
+        "A": "gemini_2_5_flash_none",
+        "B": "gemini_3_7_flash_low"
+      },
+      "raw": {
+        "ok": true,
+        "text": "{\n  \"winner\": \"B\",\n  \"scores\": {\n    \"A\": 5,\n    \"B\": 9\n  },\n  \"reason_uz\": \"B javobi mijozga aniq variantlar (savdo, ombor) taqdim etib, javob berishni osonlashtiradi va haqiqiy telefon-sotuv uslubiga juda mos. A javobi esa o'ta umumiy bo'lib, mijozdan mahsulot haqida oldindan bilimga ega bo'lishni talab qiladi.\"\n}",
+        "latency_s": 13.107,
+        "usage": {
+          "completion_tokens": 1048,
+          "prompt_tokens": 252,
+          "total_tokens": 1300,
+          "completion_tokens_details": {
+            "reasoning_tokens": 922,
+            "text_tokens": 126
+          },
+          "prompt_tokens_details": {
+            "text_tokens": 252
+          }
+        }
+      },
+      "verdict": {
+        "winner": "B",
+        "scores": {
+          "A": 5,
+          "B": 9
+        },
+        "reason_uz": "B javobi mijozga aniq variantlar (savdo, ombor) taqdim etib, javob berishni osonlashtiradi va haqiqiy telefon-sotuv uslubiga juda mos. A javobi esa o'ta umumiy bo'lib, mijozdan mahsulot haqida oldindan bilimga ega bo'lishni talab qiladi."
+      }
+    },
+    "russian_caller": {
+      "mapping": {
+        "A": "gemini_2_5_flash_none",
+        "B": "gemini_3_7_flash_low"
+      },
+      "raw": {
+        "ok": true,
+        "text": "{\n  \"winner\": \"B\",\n  \"scores\": {\n    \"A\": 5,\n    \"B\": 9\n  },\n  \"reason_uz\": \"B varianti telefon sotuv uslubiga juda mos, mijozning muammosini aniqlash uchun ochiq savol bergan. A varianti esa suhbat boshidayoq tarif tanlashni so'rab, mantiqan shoshqaloqlik qilgan va sotuv qoidalariga unchalik to'g'ri kelmaydi.\"\n}",
+        "latency_s": 13.594,
+        "usage": {
+          "completion_tokens": 1248,
+          "prompt_tokens": 332,
+          "total_tokens": 1580,
+          "completion_tokens_details": {
+            "reasoning_tokens": 1125,
+            "text_tokens": 123
+          },
+          "prompt_tokens_details": {
+            "text_tokens": 332
+          }
+        }
+      },
+      "verdict": {
+        "winner": "B",
+        "scores": {
+          "A": 5,
+          "B": 9
+        },
+        "reason_uz": "B varianti telefon sotuv uslubiga juda mos, mijozning muammosini aniqlash uchun ochiq savol bergan. A varianti esa suhbat boshidayoq tarif tanlashni so'rab, mantiqan shoshqaloqlik qilgan va sotuv qoidalariga unchalik to'g'ri kelmaydi."
+      }
+    },
+    "pricing_truth": {
+      "mapping": {
+        "A": "gemini_3_7_flash_low",
+        "B": "gemini_2_5_flash_none"
+      },
+      "raw": {
+        "ok": true,
+        "text": "{\n  \"winner\": \"B\",\n  \"scores\": {\n    \"A\": 1,\n    \"B\": 7\n  },\n  \"reason_uz\": \"A javob chala uzilib qolgan. B javob to'liq va faktlarni to'qimagan, garchi 'biz bilan bog'laning' jumlasi davom etayotgan telefon suhbati uchun biroz g'alati bo'lsa ham, u yagona mantiqiy va tugallangan javobdir.\"\n}",
+        "latency_s": 16.199,
+        "usage": {
+          "completion_tokens": 1139,
+          "prompt_tokens": 295,
+          "total_tokens": 1434,
+          "completion_tokens_details": {
+            "reasoning_tokens": 1019,
+            "text_tokens": 120
+          },
+          "prompt_tokens_details": {
+            "text_tokens": 295
+          }
+        }
+      },
+      "verdict": {
+        "winner": "B",
+        "scores": {
+          "A": 1,
+          "B": 7
+        },
+        "reason_uz": "A javob chala uzilib qolgan. B javob to'liq va faktlarni to'qimagan, garchi 'biz bilan bog'laning' jumlasi davom etayotgan telefon suhbati uchun biroz g'alati bo'lsa ham, u yagona mantiqiy va tugallangan javobdir."
+      }
+    },
+    "demo_booking": {
+      "mapping": {
+        "A": "gemini_3_7_flash_low",
+        "B": "gemini_2_5_flash_none"
+      },
+      "raw": {
+        "ok": true,
+        "text": "{\n  \"winner\": \"B\",\n  \"scores\": {\n    \"A\": 4,\n    \"B\": 7\n  },\n  \"reason_uz\": \"A varianti aniq vaqtni tasdiqlab, kalendar bo'yicha yolg'on va'da bermaslik qoidasini buzgan. B varianti esa vaqtni mutaxassislar bilan aniqlashtirishni aytib, soxta tasdiqdan qochgan va qoidaga amal qilgan.\"\n}",
+        "latency_s": 16.762,
+        "usage": {
+          "completion_tokens": 1460,
+          "prompt_tokens": 314,
+          "total_tokens": 1774,
+          "completion_tokens_details": {
+            "reasoning_tokens": 1341,
+            "text_tokens": 119
+          },
+          "prompt_tokens_details": {
+            "text_tokens": 314
+          }
+        }
+      },
+      "verdict": {
+        "winner": "B",
+        "scores": {
+          "A": 4,
+          "B": 7
+        },
+        "reason_uz": "A varianti aniq vaqtni tasdiqlab, kalendar bo'yicha yolg'on va'da bermaslik qoidasini buzgan. B varianti esa vaqtni mutaxassislar bilan aniqlashtirishni aytib, soxta tasdiqdan qochgan va qoidaga amal qilgan."
+      }
+    }
+  },
+  "summary": {
+    "wins": {
+      "gemini_2_5_flash_none": 2,
+      "gemini_3_7_flash_low": 2,
+      "tie": 0
+    },
+    "latency": {
+      "gemini_2_5_flash_none": {
+        "mean_ttft_s": 0.823,
+        "mean_total_latency_s": 1.108,
+        "successful": 4
+      },
+      "gemini_3_7_flash_low": {
+        "mean_ttft_s": 2.327,
+        "mean_total_latency_s": 2.486,
+        "successful": 4
+      }
+    }
+  }
+}

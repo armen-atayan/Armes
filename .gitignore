@@ -1,0 +1,43 @@
+# Secrets and machine-local configuration
+.env
+.*.env
+*.env
+livekit.yaml
+sip-config.yaml
+egress.yaml
+*-trunk.json
+
+# Runtime state and generated media
+call-recordings/
+call-results/
+demo-data/
+live-callbacks/
+raw-logs/
+transcripts/
+krisp-debug/
+audio-samples/
+backups/
+
+# Proprietary/local SDK assets and large models
+krisp-sdk/
+agent/models/
+
+# Python
+**/.venv/
+**/venv/
+**/__pycache__/
+**/.pytest_cache/
+*.py[cod]
+
+# Node / frontend build
+**/node_modules/
+demo-ui/dist/
+*.tsbuildinfo
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/
+
+# Local Hermes metadata
+.hermes/
