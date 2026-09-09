@@ -55,7 +55,7 @@ def test_personal_assistant_persona_contract():
     assert "короткое подтверждение — только «хорошо»" in prompt.lower()
     assert "новое поручение прямо во время текущего звонка" in prompt.lower()
     assert "сразу задай собеседнику сам вопрос без пояснений" in prompt.lower()
-    assert "фразу ожидания произноси только" in prompt.lower()
+    assert "только инструмент произносит «секундочку, сейчас уточню»" in prompt.lower()
     assert "не называй текущую дату" in prompt.lower()
     assert "не называй текущее время" in prompt.lower()
     assert "сегодня 13 мая" not in prompt.lower()
