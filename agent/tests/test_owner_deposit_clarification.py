@@ -42,7 +42,7 @@ def test_rendered_deposit_prompt_requires_tool_without_holding_prose(deposit_pro
     assert 'Фразу ожидания произноси только когда' not in prompt
     assert 'Задавай только один вопрос в каждой реплике и жди ответа' in prompt
     assert 'Не спрашивай о ценах, стоимости, депозитах, предоплате или минимальном чеке' in prompt
-    assert 'переспроси точную сумму у собеседника или попроси повторить' in prompt
+    assert 'Какую точную сумму и валюту вы называете для депозита?' in prompt
 
 
 def test_provider_visible_owner_tool_contract_requires_immediate_silent_call(deposit_probe):
@@ -52,7 +52,7 @@ def test_provider_visible_owner_tool_contract_requires_immediate_silent_call(dep
     description = tool['description']
     assert 'немедленно вызови ask_owner в этом же ходе без предварительной реплики' in description
     assert 'точная сумма депозита' in description
-    assert 'Не спрашивай эти сведения у собеседника' in description
+    assert 'не спрашивай эти сведения у собеседника повторно' in description.lower()
     assert 'Только инструмент произносит «Секундочку, сейчас уточню»' in description
 
 

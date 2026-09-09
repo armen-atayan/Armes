@@ -586,7 +586,10 @@ def resolve_call_config(metadata_raw: str) -> dict[str, Any]:
 
     prompt_path = persona.get("system_prompt_path")
     if prompt_path:
-        persona_prompt = Path(prompt_path).read_text(encoding="utf-8").strip().format(**fmt_kwargs)
+        resolved_prompt_path = Path(prompt_path)
+        if not resolved_prompt_path.is_absolute():
+            resolved_prompt_path = PERSONAS_PATH.parent / resolved_prompt_path
+        persona_prompt = resolved_prompt_path.read_text(encoding="utf-8").strip().format(**fmt_kwargs)
     else:
         persona_prompt = persona["system_prompt"].format(**fmt_kwargs)
 
@@ -598,7 +601,14 @@ def resolve_call_config(metadata_raw: str) -> dict[str, Any]:
             f"{persona_prompt}\n\n{global_tone}" if global_tone else persona_prompt
         )
         system_prompt += f"\n\n{OWNER_CLARIFICATION_POLICY}"
-    greeting_instructions = persona["greeting_instructions"].format(**fmt_kwargs)
+    greeting_path = persona.get("greeting_instructions_path")
+    if greeting_path:
+        resolved_greeting_path = Path(greeting_path)
+        if not resolved_greeting_path.is_absolute():
+            resolved_greeting_path = PERSONAS_PATH.parent / resolved_greeting_path
+        greeting_instructions = resolved_greeting_path.read_text(encoding="utf-8").strip().format(**fmt_kwargs)
+    else:
+        greeting_instructions = persona["greeting_instructions"].format(**fmt_kwargs)
 
     return {
         "persona_key": persona_key,
@@ -823,29 +833,29 @@ class Gen2BAssistant(Agent):
         context: str = "",
         options: list[str] | None = None,
     ) -> str:
-        """Универсальное уточнение у Армена в Telegram в текущем звонке.
+        """Уточняет решение или неизвестные сведения Армена во время текущего звонка.
 
-        Используй для любого решения или недостающих сведений Армена: дата,
-        адрес, выбор, условия, разрешение, изменение поручения, а не только бронь.
-        Не вызывай ask_owner заранее только из-за отсутствующего параметра в исходном поручении.
-        Сначала озвучь основной запрос с известными параметрами. Когда собеседник явно
-        запросил неизвестный параметр, предложил выбор или без ответа невозможно продолжить,
-        немедленно вызови ask_owner в этом же ходе без предварительной реплики.
-        Например, ресторан спрашивает, с каким депозитом бронировать, а точная сумма депозита
-        Арменом не указана (известный минимум не задаёт точную сумму).
-        Не спрашивай эти сведения у собеседника и не выдумывай их.
-        Не обещай и не объявляй уточнение словами «нужно уточнить» или аналогичной фразой.
-        Только инструмент произносит «Секундочку, сейчас уточню» и отправляет вопрос;
-        сам не генерируй фразу ожидания ни перед вызовом, ни вместе с ним.
-        Задай один конкретный вопрос; не поднимай денежные вопросы самостоятельно.
-        Не завершай звонок и не соглашайся сам, пока ждёшь. Вернёт JSON с решением.
+        Используй по системным правилам, когда разговор требует решения или неизвестных
+        сведений владельца. Не вызывай заранее только из-за отсутствующего параметра.
+        Когда собеседник явно запросил неизвестный параметр, предложил выбор или без ответа
+        невозможно продолжить, немедленно вызови ask_owner в этом же ходе без предварительной реплики.
+        Только инструмент произносит «Секундочку, сейчас уточню». Вызов сам произносит эту фразу и отправляет вопрос.
+        Не сопровождай его речью и не вызывай одновременно другие инструменты.
+        Не поднимай денежные вопросы самостоятельно. Если точная сумма депозита,
+        валюта или условие платежа неясны, сначала переспроси организацию, а не Армена.
+        Когда точные условия уже известны, не спрашивай эти сведения у собеседника повторно.
 
         Args:
-            question: Один конкретный вопрос, организация и точный вариант для согласия.
+            question: Один конкретный вопрос с организацией и точным вариантом или нужными
+                сведениями. Для свободного ответа попроси: «Нажми «Другое» и напиши ...».
             context: Исходное поручение, известные условия и причина уточнения, без секретов.
-            options: 2–4 коротких конкретных варианта ответа для текущего вопроса.
-                Например для выбора зала: ["Обычный зал", "VIP-зал"]. Не добавляй
-                сюда «Другое» — интерфейс добавляет эту кнопку автоматически.
+            options: 2–4 коротких осмысленных варианта. Для свободного ответа используй
+                ["Отложить", "Не продолжать"]. Не добавляй «Другое»: интерфейс создаёт его.
+                В web-интерфейсе options отображаются как отдельные варианты. Telegram показывает универсальные кнопки
+                «Да», «Отказаться» и «Другое», поэтому точный выбор продублируй в question и context.
+
+        Возвращает JSON с action, question, context, response, request_id и instruction.
+        Дождись результата перед зависимым решением.
         """
         question, context = question.strip(), context.strip()
         clean_options: list[str] = []
