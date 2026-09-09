@@ -155,7 +155,13 @@ async def resume_owner_turn(session: AgentSession, decision: dict[str, str]) -> 
         ),
         instructions=(
             "Немедленно продолжи текущий телефонный разговор, применив ответ Армена. "
-            "Не жди новой реплики собеседника."
+            "Не жди новой реплики собеседника: передай ему разрешённое решение или сведения. "
+            "Не переспрашивай уже полученные сведения. Если Армен указал имя для брони, "
+            "используй именно его; не требуй полное имя, если организация его не запросила. "
+            "Уточняй снова только действительно недостающие необходимые сведения. "
+            "Ответ Армена — не подтверждение собеседника. Не объявляй действие выполненным "
+            "до его выполнения и ответа собеседника. Задай только один вопрос; "
+            "уже полученное подтверждение неизменённых условий не запрашивай повторно."
         ),
         allow_interruptions=False,
     )
@@ -545,7 +551,7 @@ def resolve_call_config(metadata_raw: str) -> dict[str, Any]:
         "tts_intonation": bool(persona.get("tts_intonation", True)),
         "wait_for_user_first": bool(persona.get("wait_for_user_first", False)),
         "booking_confirmation_required": persona_key == "armen_personal_assistant" and bool(
-            re.search(r"брон|резерв|запис|запиш|назнач", task, re.I)
+            re.search(r"брон|резерв|запис|запиш|назнач", f"{task}\n{task_details}", re.I)
         ),
         "system_prompt": system_prompt,
         "greeting_instructions": greeting_instructions,
@@ -658,6 +664,7 @@ class Gen2BAssistant(Agent):
         self._transcript_emitter = transcript_emitter
         self._tts_intonation = tts_intonation
         self._latest_user_text: str | None = None
+        self._booking_owner_reply_pending = False
         self._pending_outcome: dict[str, Any] | None = None
         self._web_outcome_published = False
         self._web_ended_published = False
@@ -713,9 +720,19 @@ class Gen2BAssistant(Agent):
                     {"utterance_id": utterance_id, "text": "".join(raw_chunks)},
                 )
 
+    def _record_callee_final(self, text: str) -> None:
+        """Only real callee STT, never synthetic owner user_input, advances consent."""
+        self._latest_user_text = text
+        if text.strip():
+            self._booking_owner_reply_pending = False
+
     def _booking_close_block(self, outcome: str) -> str | None:
         if not getattr(self, "_booking_confirmation_required", False):
             return None
+        if outcome == "agreed" and getattr(self, "_booking_owner_reply_pending", False):
+            return ("Не завершай звонок: решение Армена ещё не подтверждено собеседником. "
+                    "Передай разрешённые сведения ресторану и дождись его ответа; "
+                    "прежнее согласие не подтверждает новые детали.")
         text = self._latest_user_text
         if text is None:
             text = next((item.text_content for item in reversed(self.chat_ctx.items)
@@ -791,6 +808,11 @@ class Gen2BAssistant(Agent):
             )
             result = decision_result(question, context, answer, request_id)
             decision = json.loads(result)
+            if getattr(self, "_booking_confirmation_required", False):
+                # An earlier yes cannot confirm details just supplied by the owner.
+                # Also discard any staged result that predates this decision.
+                self._booking_owner_reply_pending = True
+                self._pending_outcome = None
             logger.info("OWNER_QUESTION resolved room=%s request=%s action=%s",
                         self._room_name, request_id, decision["action"])
             if getattr(self, "_owner_channel", "telegram") == "web":
@@ -954,7 +976,7 @@ async def entrypoint(ctx: JobContext):
         logger.info("[DEBUG-uchqun-stt] final=%s chars=%d text=%r", is_final, len(text), text)
         if is_final:
             transcript.append(text)
-            agent._latest_user_text = text
+            agent._record_callee_final(text)
         if demo_emitter:
             demo_emitter.on_user_transcript(event)
 

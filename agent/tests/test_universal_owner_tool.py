@@ -83,3 +83,16 @@ async def test_send_failure_is_not_approval_and_cleans_up(monkeypatch, tmp_path)
     result=json.loads(await g.Gen2BAssistant.ask_owner._func(agent,ctx,'Изменить адрес?'))
     assert result['action']=='delivery_failed'
     assert not list((tmp_path/'pending').glob('*.json'))
+
+
+@pytest.mark.asyncio
+async def test_owner_continuation_uses_supplied_name_without_inventing_full_name_requirement():
+    session = SimpleNamespace(interrupt=AsyncMock(), generate_reply=Mock())
+    decision = json.loads(g.decision_result(
+        'Разрешаете оформить бронь на имя Армен?', '', 'Оформить на имя Армен'))
+    await g.resume_owner_turn(session, decision)
+    instructions = session.generate_reply.call_args.kwargs['instructions']
+    assert 'Не переспрашивай уже полученные сведения' in instructions
+    assert 'полное имя' in instructions
+    assert 'передай' in instructions.lower()
+    assert 'не подтверждение собеседника' in instructions.lower()

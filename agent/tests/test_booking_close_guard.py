@@ -26,7 +26,8 @@ def agent_with_text(text, enabled=True):
 @pytest.mark.parametrize('text',[
  'А подскажите пожалуйста вас сколько чс будет.', 'На сколько человек?',
  'Онаопиш.', 'Да, на сколько человек?', 'Нет, мест нет.',
- 'Я не подтверждаю.', 'Места есть.',
+ 'Я не подтверждаю.', 'Места есть.', 'Да есть.',
+ 'Да да получится, если внесёте депозит.', 'Да да не получится.',
 ])
 async def test_no_agreed_outcome_from_question_or_garbled_text(text):
     a=agent_with_text(text)
@@ -112,3 +113,60 @@ async def test_other_personas_are_unchanged():
     a=agent_with_text('Онаопиш.',enabled=False)
     await g.Gen2BAssistant.finalize_call._func(a,SimpleNamespace(),outcome='agreed',summary='unchanged')
     assert a._pending_outcome is not None
+
+
+def test_follow_up_keeps_booking_guard_from_prior_call_details():
+    import json
+    config = g.resolve_call_config(json.dumps({
+        'persona': 'armen_personal_assistant',
+        'task': 'Есть ли время послезавтра в 21:00?',
+        'task_details': 'Исходное поручение: Позвони в ресторан и забронируй стол на 10 человек.',
+    }))
+    assert config['booking_confirmation_required'] is True
+
+
+@pytest.mark.asyncio
+async def test_production_positive_reply_does_not_force_duplicate_confirmation():
+    a = agent_with_text('Да да получится.')
+    from livekit.agents.llm import ChatMessage
+    a._chat_ctx.items.insert(0, ChatMessage(
+        role='assistant', content=['Получится оформить бронь на десять человек завтра в 22:00 '
+                                   'с депозитом 50 000 рублей и скидкой 20%?']))
+    await g.Gen2BAssistant.finalize_call._func(
+        a, SimpleNamespace(), outcome='agreed', summary='Ресторан согласился оформить бронь.')
+    assert a._pending_outcome is not None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('earlier_reply', ['Да.', 'Да есть.'])
+async def test_owner_permission_cannot_reuse_earlier_callee_yes(monkeypatch, tmp_path, earlier_reply):
+    # Follow-up demo_3b91d08158adf0e7: permission to use the name never
+    # reached the restaurant. Use an otherwise accepted yes to expose stale evidence.
+    a = agent_with_text(earlier_reply)
+    a._pending_outcome = {'outcome': 'agreed', 'summary': 'Previous agreement'}
+    monkeypatch.setattr(g, 'LIVE_CALLBACK_DIR', tmp_path)
+    monkeypatch.setattr(g, 'send_live_callback_to_telegram', lambda *args: 123)
+    monkeypatch.setattr(g, 'wait_for_response', AsyncMock(return_value='Оформить на имя Армен'))
+    session = SimpleNamespace(say=Mock(), interrupt=AsyncMock(), generate_reply=Mock())
+    await g.Gen2BAssistant.ask_owner._func(
+        a, SimpleNamespace(session=session),
+        question='Разрешаете оформить бронь на имя Армен?')
+    await a._owner_continuation_task
+    assert a._pending_outcome is None
+    a._chat_ctx.add_message(role='user', content='Ответ Армена: Указать только Армен')
+    a._record_callee_final('')
+    await g.Gen2BAssistant.finalize_call._func(
+        a, SimpleNamespace(), outcome='agreed', summary='Бронь оформлена на имя Армен.')
+    assert a._pending_outcome is None
+    hang = AsyncMock()
+    monkeypatch.setattr(g, 'hang_up_sip_participant', hang)
+    result = await g.Gen2BAssistant.end_call._func(a, SimpleNamespace(session=session))
+    assert 'не завершай' in result.lower()
+    hang.assert_not_awaited()
+
+    # Only actual callee STT may discharge the pending owner decision.
+    a._chat_ctx.add_message(role='assistant', content='Оформите, пожалуйста, на имя Армен.')
+    a._record_callee_final('Да.')
+    await g.Gen2BAssistant.finalize_call._func(
+        a, SimpleNamespace(), outcome='agreed', summary='Бронь оформлена на имя Армен.')
+    assert a._pending_outcome['outcome'] == 'agreed'
