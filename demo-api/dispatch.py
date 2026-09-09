@@ -27,6 +27,11 @@ class CallWithPersonaDispatcher:
         self._function = function
         self._extra_kwargs = extra_kwargs or {}
 
+    async def hangup(self, *, room_name: str) -> None:
+        from call_control import hang_up_sip_participant
+
+        await hang_up_sip_participant(room_name, "callee")
+
     async def dispatch(self, request: CallRequest, *, session_id: str, room_name: str) -> CallDispatchResult:
         kwargs = {
             "persona": "armen_personal_assistant",
@@ -63,6 +68,9 @@ class CallWithPersonaDispatcher:
 class UnavailableDispatcher:
     def __init__(self, error: Exception):
         self.error = error
+
+    async def hangup(self, *, room_name: str) -> None:
+        raise RuntimeError(str(self.error))
 
     async def dispatch(self, request: CallRequest, *, session_id: str, room_name: str) -> CallDispatchResult:
         raise RuntimeError(str(self.error))

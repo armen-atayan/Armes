@@ -361,3 +361,94 @@ def test_token_protects_api_and_websocket(tmp_path):
         assert client.get("/health").status_code == 200
         assert client.post("/api/calls", json={}).status_code == 401
         assert client.post("/api/calls", json={}, headers={"X-Demo-Token": "top-secret"}).status_code == 422
+
+
+def test_hangup_active_is_authenticated_and_idempotent(harness):
+    import asyncio
+    client, dispatcher, settings, app = harness
+    call = create_call(client)
+    sid = call['session_id']
+    app.state.store.append_event(sid, 'call.connected', {})
+    calls = []
+    async def hangup(*, room_name):
+        calls.append(room_name)
+        await asyncio.sleep(0.03)
+    dispatcher.hangup = hangup
+    settings.demo_token = 'secret'
+    url = f'/api/calls/{sid}/hangup'
+    assert client.post(url).status_code == 401
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        responses = list(pool.map(lambda _: client.post(url, headers={'x-demo-token': 'secret'}), range(4)))
+    assert [r.status_code for r in responses] == [200] * 4
+    assert calls == [call['room_name']]
+    snapshot = responses[-1].json()
+    assert snapshot['status'] == 'ended'
+    events = app.state.store.read_events(sid)
+    assert [e['type'] for e in events] == ['call.created', 'call.connected', 'call.outcome', 'call.ended']
+    assert events[-2]['payload']['outcome'] == 'user_terminated'
+    assert events[-1]['payload']['reason'] == 'user_terminated'
+    assert not app.state.store.projected_session(sid)['recording_finalized']
+
+
+@pytest.mark.parametrize('state', ['created', 'dialing', 'ended', 'completed', 'failed'])
+def test_hangup_rejects_inactive_and_unknown(harness, state):
+    client, _, _, app = harness
+    sid = create_call(client)['session_id']
+    app.state.store.append_event(sid, 'call.state', {'state': state})
+    assert client.post(f'/api/calls/{sid}/hangup').status_code == 409
+    assert client.post('/api/calls/demo_missing/hangup').status_code == 404
+
+
+def test_hangup_failure_does_not_publish_success_and_can_retry(harness):
+    client, dispatcher, _, app = harness
+    sid = create_call(client)['session_id']
+    app.state.store.append_event(sid, 'call.connected', {})
+    async def hangup(*, room_name):
+        raise RuntimeError('LiveKit unavailable')
+    dispatcher.hangup = hangup
+    assert client.post(f'/api/calls/{sid}/hangup').status_code == 502
+    assert app.state.store.projected_session(sid)['status'] == 'connected'
+    async def success(*, room_name):
+        pass
+    dispatcher.hangup = success
+    assert client.post(f'/api/calls/{sid}/hangup').status_code == 200
+
+
+def test_user_hangup_survives_agent_teardown_and_recording_recovery(harness):
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'agent'))
+    from demo_events import DemoEventStore
+    client, dispatcher, settings, app = harness
+    call = create_call(client)
+    sid = call['session_id']
+    async def hangup(*, room_name):
+        pass
+    dispatcher.hangup = hangup
+    app.state.store.append_event(sid, 'call.connected', {})
+    assert client.post(f'/api/calls/{sid}/hangup').status_code == 200
+    agent = DemoEventStore(settings.data_dir)
+    agent.emit(sid, call['room_name'], 'call.outcome', {'outcome': 'agreed'})
+    agent.emit(sid, call['room_name'], 'call.ended', {'reason': 'completed'})
+    agent.emit(sid, call['room_name'], 'call.state', {'state': 'speaking'})
+    events = app.state.store.read_events(sid)
+    assert len([e for e in events if e['type'] == 'call.outcome']) == 1
+    assert len([e for e in events if e['type'] == 'call.ended']) == 1
+    assert app.state.store.projected_session(sid)['status'] == 'ended'
+    settings.recordings_dir.mkdir()
+    (settings.recordings_dir / f"{call['room_name']}.ogg").write_bytes(b'audio')
+    (settings.recordings_dir / 'EG_1.json').write_text(json.dumps({'room_name': call['room_name'], 'ended_at': 1}))
+    assert app.state.store.projected_session(sid)['recording_finalized']
+    assert client.get(f'/api/calls/{sid}/recording').status_code == 200
+
+
+def test_recording_recovery_preserves_existing_ready_event(harness):
+    client, _, settings, app = harness
+    call = create_call(client)
+    sid = call['session_id']
+    app.state.store.append_event(sid, 'call.outcome', {'outcome': 'incomplete'})
+    app.state.store.append_event(sid, 'recording.ready', {})
+    settings.recordings_dir.mkdir()
+    (settings.recordings_dir / f"{call['room_name']}.ogg").write_bytes(b'audio')
+    (settings.recordings_dir / 'EG_1.json').write_text(json.dumps({'room_name': call['room_name'], 'ended_at': 1}))
+    assert app.state.store.projected_session(sid)['status'] == 'ended'
+    assert len([e for e in app.state.store.read_events(sid) if e['type'] == 'recording.ready']) == 1

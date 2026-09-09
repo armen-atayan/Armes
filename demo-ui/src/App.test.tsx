@@ -31,6 +31,55 @@ describe('T2 personal assistant UI', () => {
   })
   afterEach(() => vi.unstubAllGlobals())
 
+  it('hangs up the active call beside the header timer with disabled progress', async () => {
+    localStorage.setItem('t2.activeSession', 'demo_1')
+    let finish!: (response: Response) => void
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input).endsWith('/hangup')) return new Promise<Response>(resolve => { finish = resolve })
+      return new Response(JSON.stringify({ ...createdCall, events: [event(1, 'call.connected', {})] }))
+    }))
+    render(<App />)
+    const button = await screen.findByRole('button', { name: 'Положить трубку' })
+    expect(button.closest('header')?.querySelector('time')).toHaveTextContent('00:00')
+    expect(button.previousElementSibling?.tagName).toBe('TIME')
+    await userEvent.click(button)
+    expect(fetch).toHaveBeenCalledWith('/api/calls/demo_1/hangup', expect.objectContaining({ method: 'POST' }))
+    expect(screen.getByRole('button', { name: 'Завершаем…' })).toBeDisabled()
+    await userEvent.click(button)
+    expect(vi.mocked(fetch).mock.calls.filter(([url]) => String(url).endsWith('/hangup'))).toHaveLength(1)
+    finish(new Response(JSON.stringify({ status: 'ended', events: [
+      event(2, 'call.outcome', { outcome: 'user_terminated', summary: 'Звонок завершён пользователем.' }),
+      event(3, 'call.ended', { reason: 'user_terminated' }),
+    ] })))
+    await waitFor(() => expect(screen.queryByRole('button', { name: /Положить трубку|Завершаем/ })).not.toBeInTheDocument())
+    expect(screen.getByText('Звонок завершён пользователем.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Отменить договорённость' })).not.toBeInTheDocument()
+  })
+
+  it('hides hangup before connection and after a remote end', async () => {
+    localStorage.setItem('t2.activeSession', 'demo_1')
+    render(<App />)
+    await screen.findByText('Набираем номер')
+    expect(screen.queryByRole('button', { name: 'Положить трубку' })).not.toBeInTheDocument()
+    await waitFor(() => expect(MockSocket.instance.onmessage).toBeTruthy())
+    MockSocket.instance.emit(event(2, 'call.connected', {}))
+    await screen.findByRole('button', { name: 'Положить трубку' })
+    MockSocket.instance.emit(event(3, 'call.ended', {}))
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Положить трубку' })).not.toBeInTheDocument())
+  })
+
+  it('keeps the call active and allows retry when hangup fails', async () => {
+    localStorage.setItem('t2.activeSession', 'demo_1')
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).endsWith('/hangup')
+      ? new Response('{}', { status: 502 })
+      : new Response(JSON.stringify({ ...createdCall, events: [event(1, 'call.connected', {})] }))))
+    render(<App />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Положить трубку' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Не удалось завершить звонок')
+    expect(screen.getByRole('button', { name: 'Положить трубку' })).toBeEnabled()
+    expect(screen.getByText('На связи')).toBeInTheDocument()
+  })
+
   it('opens on a phone-number-first conversation list with a plus button', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ calls: [
       { session_id: 'demo_old', contact_name: 'Артур', phone_number: '+799****4567', task: 'Узнать про машину', status: 'ended', created_at: 1700000000 },

@@ -42,3 +42,14 @@ def test_dispatch_adapter_reports_missing_reusable_function(tmp_path, monkeypatc
     sys.modules.pop("call_with_persona", None)
     with pytest.raises(RuntimeError, match="reusable async dispatch"):
         CallWithPersonaDispatcher()
+
+
+@pytest.mark.asyncio
+async def test_hangup_adapter_removes_current_sip_participant(monkeypatch):
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock
+    control = AsyncMock()
+    monkeypatch.setitem(sys.modules, 'call_control', SimpleNamespace(hang_up_sip_participant=control))
+    dispatcher = object.__new__(CallWithPersonaDispatcher)
+    await dispatcher.hangup(room_name='actual-room')
+    control.assert_awaited_once_with('actual-room', 'callee')

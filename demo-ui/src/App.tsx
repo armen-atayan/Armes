@@ -46,6 +46,10 @@ export default function App() {
   const [submitting, setSubmitting] = useState(false)
   const [custom, setCustom] = useState(false)
   const [customAnswer, setCustomAnswer] = useState('')
+  const [hangingUp, setHangingUp] = useState(false)
+  const [hangupError, setHangupError] = useState('')
+  const currentSession = useRef(sessionId)
+  currentSession.current = sessionId
   const [answering, setAnswering] = useState(false)
   const [liveInstruction, setLiveInstruction] = useState('')
   const [sendingInstruction, setSendingInstruction] = useState(false)
@@ -128,6 +132,20 @@ export default function App() {
     void hydrate().finally(connect)
     return () => { disposed = true; socket?.close(); if (reconnectTimer) clearTimeout(reconnectTimer) }
   }, [sessionId])
+
+  async function hangup() {
+    if (hangingUp || state.ended) return
+    const target = sessionId
+    setHangingUp(true); setHangupError('')
+    try {
+      const response = await fetch(`${API}/api/calls/${encodeURIComponent(target)}/hangup`, { method: 'POST' })
+      if (!response.ok) throw new Error()
+      const snapshot = await response.json()
+      if (currentSession.current === target) snapshot.events.forEach((event: CallEvent) => dispatch(event))
+    } catch {
+      if (currentSession.current === target) setHangupError('Не удалось завершить звонок. Попробуйте ещё раз.')
+    } finally { setHangingUp(false) }
+  }
 
   async function submitCall(task: TaskInput) {
     setFormError(''); setSubmitting(true)
@@ -262,7 +280,7 @@ export default function App() {
         <div className="island" aria-hidden="true" />
         <div className="status-bar"><span>9:41</span><span className="system-icons">▮▮▮ ◉ ▰</span></div>
         {!sessionId && !showComposer ? <HistoryView calls={history} loading={historyLoading} onNew={() => setShowComposer(true)} onOpen={openCall}/> : !sessionId ? <ChatComposer step={chatStep} draft={draft} setDraft={setDraft} task={pendingTask} phone={pendingPhone} error={formError} busy={submitting} recording={recordingVoice} transcribing={transcribing} onSubmit={sendChatMessage} onVoice={recordingVoice ? stopVoice : startVoice} onBack={() => setShowComposer(false)} onCall={() => submitCall({ contact_name: contactFromTask(pendingTask), phone_number: pendingPhone, task: pendingTask, details: '' })}/> :
-          <CallView contact={contact} status={status} elapsed={elapsed} state={state} custom={custom} setCustom={setCustom} customAnswer={customAnswer} setCustomAnswer={setCustomAnswer} answer={answer} dismissQuestion={() => dispatch({ type: 'question.dismiss' })} answering={answering} reset={reset} scrollRef={scrollRef} liveInstruction={liveInstruction} setLiveInstruction={setLiveInstruction} sendLiveInstruction={sendLiveInstruction} sendingInstruction={sendingInstruction} startFollowUp={startFollowUp} followUpBusy={followUpBusy} followUpPromptOpen={followUpPromptOpen} setFollowUpPromptOpen={setFollowUpPromptOpen} followUpInstruction={followUpInstruction} setFollowUpInstruction={setFollowUpInstruction}/>
+          <CallView hangup={hangup} hangingUp={hangingUp} hangupError={hangupError} contact={contact} status={status} elapsed={elapsed} state={state} custom={custom} setCustom={setCustom} customAnswer={customAnswer} setCustomAnswer={setCustomAnswer} answer={answer} dismissQuestion={() => dispatch({ type: 'question.dismiss' })} answering={answering} reset={reset} scrollRef={scrollRef} liveInstruction={liveInstruction} setLiveInstruction={setLiveInstruction} sendLiveInstruction={sendLiveInstruction} sendingInstruction={sendingInstruction} startFollowUp={startFollowUp} followUpBusy={followUpBusy} followUpPromptOpen={followUpPromptOpen} setFollowUpPromptOpen={setFollowUpPromptOpen} followUpInstruction={followUpInstruction} setFollowUpInstruction={setFollowUpInstruction}/>
         }
         <div className="home-indicator" aria-hidden="true" />
       </div>
@@ -295,9 +313,10 @@ function HistoryView({ calls, loading, onNew, onOpen }: { calls: CallHistoryItem
   </div>
 }
 
-function CallView({ contact, status, elapsed, state, custom, setCustom, customAnswer, setCustomAnswer, answer, dismissQuestion, answering, reset, scrollRef, liveInstruction, setLiveInstruction, sendLiveInstruction, sendingInstruction, startFollowUp, followUpBusy, followUpPromptOpen, setFollowUpPromptOpen, followUpInstruction, setFollowUpInstruction }: any) {
+function CallView({ hangup, hangingUp, hangupError, contact, status, elapsed, state, custom, setCustom, customAnswer, setCustomAnswer, answer, dismissQuestion, answering, reset, scrollRef, liveInstruction, setLiveInstruction, sendLiveInstruction, sendingInstruction, startFollowUp, followUpBusy, followUpPromptOpen, setFollowUpPromptOpen, followUpInstruction, setFollowUpInstruction }: any) {
   return <div className="page call-page">
-    <header className="call-header"><button className="icon-button" onClick={reset} aria-label="Новая задача">‹</button><div><h1>{contact}</h1><p><StatusIcon status={state.status}/>{status}</p></div><time>{elapsed}</time></header>
+    <header className="call-header"><button className="icon-button" onClick={reset} aria-label="Новая задача">‹</button><div><h1>{contact}</h1><p><StatusIcon status={state.status}/>{status}</p></div><div className="call-controls"><time>{elapsed}</time>{!state.ended && ['connected', 'listening', 'thinking', 'speaking', 'waiting_owner'].includes(state.status) && <button type="button" className="hangup-button" onClick={hangup} disabled={hangingUp} aria-busy={hangingUp}>{hangingUp ? 'Завершаем…' : 'Положить трубку'}</button>}</div></header>
+    {hangupError && !state.ended && <p className="form-error" role="alert">{hangupError}</p>}
     <div className="conversation" ref={scrollRef} aria-live="polite">
       <div className="call-start"><span>Звонок начат</span></div>
       {state.archivedCalls.map((call: any, index: number) => <div className="archived-call" key={`archived-${index}`}>

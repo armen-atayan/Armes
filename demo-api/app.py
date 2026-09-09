@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import hmac
+import fcntl
 import json
 import mimetypes
 import secrets
@@ -21,6 +22,8 @@ from transcription import Gen2BTranscriber
 
 
 class Dispatcher(Protocol):
+    async def hangup(self, *, room_name: str) -> None: ...
+
     async def dispatch(self, request: CallRequest, *, session_id: str, room_name: str) -> CallDispatchResult: ...
 
 
@@ -104,6 +107,35 @@ def create_app(*, settings: Settings | None = None, dispatcher: Dispatcher | Non
         if session is None:
             raise HTTPException(status_code=404, detail="Session not found")
         return {**session, "events": store.read_events(session_id, after_seq)}
+
+    @app.post("/api/calls/{session_id}/hangup", dependencies=protected)
+    async def hangup_call(session_id: str) -> dict[str, Any]:
+        if store.get_session(session_id) is None:
+            raise HTTPException(status_code=404, detail="Session not found")
+        # A separate advisory lock spans the network operation across API workers.
+        with (store.sessions_dir / f"{session_id}.hangup.lock").open("a") as lock:
+            while True:
+                try:
+                    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except BlockingIOError:
+                    await asyncio.sleep(0.02)
+            session = store.projected_session(session_id)
+            events = store.read_events(session_id)
+            if not any(e["type"] == "call.ended" and e["payload"].get("reason") == "user_terminated" for e in events):
+                if session["status"] not in {"connected", "listening", "thinking", "speaking", "waiting_owner"}:
+                    raise HTTPException(status_code=409, detail="Call is not active")
+                try:
+                    await dispatcher.hangup(room_name=session["room_name"])
+                except Exception as exc:
+                    raise HTTPException(status_code=502, detail="Call hangup failed") from exc
+                store.append_event(session_id, "call.outcome", {
+                    "outcome": "user_terminated", "summary": "Звонок завершён пользователем.",
+                    "next_step": "", "agreed_price_kzt": None, "agreed_price_gbp": None,
+                    "volume_m3": None,
+                })
+                store.append_event(session_id, "call.ended", {"reason": "user_terminated"})
+            return {**store.projected_session(session_id), "events": store.read_events(session_id)}
 
     @app.post("/api/calls/{session_id}/follow-up", response_model=CallCreated, status_code=status.HTTP_201_CREATED, dependencies=protected)
     async def follow_up_call(session_id: str, payload: FollowUpRequest) -> CallCreated:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import fcntl
 import os
 import threading
 import time
@@ -79,7 +80,7 @@ class EventStore:
         """Complete web delivery if a worker died after egress finalized the file."""
         events = self.read_events(session_id)
         types = [str(event.get("type", "")) for event in events]
-        if "call.outcome" not in types or "call.ended" in types:
+        if "call.outcome" not in types or ("recording.ready" in types and "call.ended" in types):
             return
         recording = self.recordings_dir / f"{session['room_name']}.ogg"
         metadata_finalized = False
@@ -97,7 +98,8 @@ class EventStore:
             self.append_event(session_id, "recording.ready", {
                 "url": f"/api/calls/{session_id}/recording",
             })
-        self.append_event(session_id, "call.ended", {"reason": "recovered_after_worker_exit"})
+        if "call.ended" not in types:
+            self.append_event(session_id, "call.ended", {"reason": "recovered_after_worker_exit"})
 
     def projected_session(self, session_id: str) -> dict[str, Any] | None:
         """Project agent-appended event state without requiring the agent to call this API."""
@@ -159,25 +161,30 @@ class EventStore:
             session = self.get_session(session_id)
             if session is None:
                 raise KeyError(session_id)
-            existing = self.read_events(session_id)
-            event = {
-                "session_id": session_id, "room_name": session["room_name"],
-                "seq": (existing[-1]["seq"] if existing else 0) + 1,
-                "timestamp": time.time(), "type": event_type, "payload": payload,
-            }
-            with self._events_path(session_id).open("a", encoding="utf-8") as stream:
-                stream.write(json.dumps(event, ensure_ascii=False) + "\n")
-                stream.flush()
-                os.fsync(stream.fileno())
-            status = payload.get("state") if event_type == "call.state" else _STATUS_BY_EVENT.get(event_type)
-            changes: dict[str, Any] = {}
-            if status:
-                changes["status"] = status
-            if event_type == "recording.ready":
-                changes.update(
-                    recording_path=str(self.recordings_dir / f"{session['room_name']}.ogg"),
-                    recording_finalized=True,
-                )
-            if changes:
-                self.update_session(session_id, **changes)
-            return event
+            with self._events_path(session_id).with_suffix(".lock").open("a") as lock:
+                fcntl.flock(lock, fcntl.LOCK_EX)
+                return self._append_event_locked(session_id, session, event_type, payload)
+
+    def _append_event_locked(self, session_id, session, event_type, payload):
+        existing = self.read_events(session_id)
+        event = {
+            "session_id": session_id, "room_name": session["room_name"],
+            "seq": (existing[-1]["seq"] if existing else 0) + 1,
+            "timestamp": time.time(), "type": event_type, "payload": payload,
+        }
+        with self._events_path(session_id).open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps(event, ensure_ascii=False) + "\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        status = payload.get("state") if event_type == "call.state" else _STATUS_BY_EVENT.get(event_type)
+        changes: dict[str, Any] = {}
+        if status:
+            changes["status"] = status
+        if event_type == "recording.ready":
+            changes.update(
+                recording_path=str(self.recordings_dir / f"{session['room_name']}.ogg"),
+                recording_finalized=True,
+            )
+        if changes:
+            self.update_session(session_id, **changes)
+        return event

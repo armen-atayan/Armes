@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import fcntl
 import re
 import threading
 import time
@@ -72,8 +73,13 @@ class DemoEventStore:
             raise ValueError(f"unsupported demo event: {event_type}")
         path = self._path(session_id)
         sanitized = {key: value for key, value in payload.items() if key in allowed}
-        with self._lock:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with self._lock, path.with_suffix(".lock").open("a") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
             existing = self.replay(session_id)
+            user_outcome = next((event for event in existing if event["type"] == "call.outcome" and event["payload"].get("outcome") == "user_terminated"), None)
+            if user_outcome and event_type in {"call.outcome", "call.ended", "call.failed", "call.state", "call.connected", "call.dialing"}:
+                return user_outcome
             event = {
                 "session_id": session_id,
                 "room_name": room_name,
