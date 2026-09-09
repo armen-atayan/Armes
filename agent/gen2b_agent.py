@@ -49,6 +49,7 @@ from livekit.agents import (
     EndpointingOptions,
     InterruptionOptions,
     JobContext,
+    PreemptiveGenerationOptions,
     RunContext,
     TurnHandlingOptions,
     WorkerOptions,
@@ -1205,6 +1206,15 @@ async def entrypoint(ctx: JobContext):
                 mode="fixed",
                 min_delay=KRISP_ENDPOINTING_MIN_DELAY,
                 max_delay=KRISP_ENDPOINTING_MAX_DELAY,
+            ),
+            # Start both Luna and sentence-streamed TTS as soon as STT emits a
+            # stable transcript. Audio is scheduled only after end-of-turn, so
+            # this hides inference latency without speaking over the callee.
+            preemptive_generation=PreemptiveGenerationOptions(
+                enabled=True,
+                preemptive_tts=True,
+                max_speech_duration=10.0,
+                max_retries=3,
             ),
             interruption=InterruptionOptions(
                 # enabled must stay True: it also sets the default
