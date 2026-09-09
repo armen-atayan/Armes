@@ -118,13 +118,6 @@ def create_app(*, settings: Settings | None = None, dispatcher: Dispatcher | Non
             raise HTTPException(status_code=409, detail="Original phone number is unavailable")
         events = store.read_events(session_id)
         outcome_payload = next((event.get("payload", {}) for event in reversed(events) if event.get("type") == "call.outcome"), {})
-        transcript_lines = []
-        for event in events:
-            role = "Собеседник" if event.get("type") == "transcript.caller.final" else "Ассистент" if event.get("type") == "transcript.assistant.final" else ""
-            text = str((event.get("payload") or {}).get("text") or "").strip()
-            if role and text:
-                transcript_lines.append(f"{role}: {text}")
-        transcript = "\n".join(transcript_lines[-20:])
         summary = str(outcome_payload.get("summary") or outcome_payload.get("outcome") or request_data.get("task") or "предыдущая договорённость")
         next_step = str(outcome_payload.get("next_step") or "")
         if payload.action == "cancel":
@@ -140,7 +133,6 @@ def create_app(*, settings: Settings | None = None, dispatcher: Dispatcher | Non
             f"Следующий шаг из прошлого звонка: {next_step}." if next_step else "",
             f"Исходное поручение: {request_data.get('task', '')}.",
             f"Новое поручение Армена: {payload.instruction}." if payload.action == "continue" else "",
-            f"Финальные реплики предыдущего разговора:\n{transcript}" if transcript else "",
             action_rules,
         ] if part)
         follow_request = CallRequest(

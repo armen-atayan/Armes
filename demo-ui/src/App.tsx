@@ -262,7 +262,7 @@ export default function App() {
         <div className="island" aria-hidden="true" />
         <div className="status-bar"><span>9:41</span><span className="system-icons">▮▮▮ ◉ ▰</span></div>
         {!sessionId && !showComposer ? <HistoryView calls={history} loading={historyLoading} onNew={() => setShowComposer(true)} onOpen={openCall}/> : !sessionId ? <ChatComposer step={chatStep} draft={draft} setDraft={setDraft} task={pendingTask} phone={pendingPhone} error={formError} busy={submitting} recording={recordingVoice} transcribing={transcribing} onSubmit={sendChatMessage} onVoice={recordingVoice ? stopVoice : startVoice} onBack={() => setShowComposer(false)} onCall={() => submitCall({ contact_name: contactFromTask(pendingTask), phone_number: pendingPhone, task: pendingTask, details: '' })}/> :
-          <CallView contact={contact} status={status} elapsed={elapsed} state={state} custom={custom} setCustom={setCustom} customAnswer={customAnswer} setCustomAnswer={setCustomAnswer} answer={answer} answering={answering} reset={reset} scrollRef={scrollRef} liveInstruction={liveInstruction} setLiveInstruction={setLiveInstruction} sendLiveInstruction={sendLiveInstruction} sendingInstruction={sendingInstruction} startFollowUp={startFollowUp} followUpBusy={followUpBusy} followUpPromptOpen={followUpPromptOpen} setFollowUpPromptOpen={setFollowUpPromptOpen} followUpInstruction={followUpInstruction} setFollowUpInstruction={setFollowUpInstruction}/>
+          <CallView contact={contact} status={status} elapsed={elapsed} state={state} custom={custom} setCustom={setCustom} customAnswer={customAnswer} setCustomAnswer={setCustomAnswer} answer={answer} dismissQuestion={() => dispatch({ type: 'question.dismiss' })} answering={answering} reset={reset} scrollRef={scrollRef} liveInstruction={liveInstruction} setLiveInstruction={setLiveInstruction} sendLiveInstruction={sendLiveInstruction} sendingInstruction={sendingInstruction} startFollowUp={startFollowUp} followUpBusy={followUpBusy} followUpPromptOpen={followUpPromptOpen} setFollowUpPromptOpen={setFollowUpPromptOpen} followUpInstruction={followUpInstruction} setFollowUpInstruction={setFollowUpInstruction}/>
         }
         <div className="home-indicator" aria-hidden="true" />
       </div>
@@ -295,7 +295,7 @@ function HistoryView({ calls, loading, onNew, onOpen }: { calls: CallHistoryItem
   </div>
 }
 
-function CallView({ contact, status, elapsed, state, custom, setCustom, customAnswer, setCustomAnswer, answer, answering, reset, scrollRef, liveInstruction, setLiveInstruction, sendLiveInstruction, sendingInstruction, startFollowUp, followUpBusy, followUpPromptOpen, setFollowUpPromptOpen, followUpInstruction, setFollowUpInstruction }: any) {
+function CallView({ contact, status, elapsed, state, custom, setCustom, customAnswer, setCustomAnswer, answer, dismissQuestion, answering, reset, scrollRef, liveInstruction, setLiveInstruction, sendLiveInstruction, sendingInstruction, startFollowUp, followUpBusy, followUpPromptOpen, setFollowUpPromptOpen, followUpInstruction, setFollowUpInstruction }: any) {
   return <div className="page call-page">
     <header className="call-header"><button className="icon-button" onClick={reset} aria-label="Новая задача">‹</button><div><h1>{contact}</h1><p><StatusIcon status={state.status}/>{status}</p></div><time>{elapsed}</time></header>
     <div className="conversation" ref={scrollRef} aria-live="polite">
@@ -314,6 +314,7 @@ function CallView({ contact, status, elapsed, state, custom, setCustom, customAn
         {!custom && state.question.options.length > 0 ? <div className="decision-actions dynamic">
           {state.question.options.map((option: string) => <button key={option} disabled={answering} onClick={() => answer(option)}>{option}</button>)}
           <button disabled={answering} onClick={() => setCustom(true)}>Другое</button>
+          <button disabled={answering} onClick={dismissQuestion}>Промолчать</button>
         </div> :
         <div className="custom-answer"><label htmlFor="custom-answer">Ваш ответ</label><textarea id="custom-answer" autoFocus value={customAnswer} onKeyDown={(event) => commandEnter(event, () => { if (customAnswer.trim() && !answering) answer(customAnswer) })} onChange={(e) => setCustomAnswer(e.target.value)} placeholder="Напишите, что ответить…"/><div>{state.question.options.length > 0 && <button onClick={() => setCustom(false)}>Назад</button>}<button className="primary" disabled={!customAnswer.trim() || answering} onClick={() => answer(customAnswer)}>Отправить</button></div></div>}
       </section>}

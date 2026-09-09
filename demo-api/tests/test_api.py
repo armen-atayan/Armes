@@ -257,14 +257,21 @@ def test_completed_call_can_start_a_contextual_follow_up(harness, action):
     if action == "continue":
         assert request.task == "Уточнить, есть ли столик у окна"
         assert "Новое поручение Армена: Уточнить, есть ли столик у окна" in request.details
-    assert "Собеседник: Да, бронируем на 20:00" in request.details
-    assert "Ассистент: Спасибо, договорились" in request.details
+    assert "Да, бронируем на 20:00" not in request.details
+    assert "Спасибо, договорились" not in request.details
+    assert "Финальные реплики" not in request.details
+    assert "Следующий шаг из прошлого звонка: Прийти к 20:00" in request.details
+    original_task = app.state.store.get_session(session_id)["request"]["task"]
+    assert f"Исходное поручение: {original_task}" in request.details
     if action == "continue":
         assert request.task == "Уточнить, есть ли столик у окна"
+        assert "Продолжи предыдущий разговор" in request.details
+        assert "не выдумывай отсутствующие детали" in request.details
     else:
         assert "отмен" in request.task.lower()
         assert "не договаривайся о новых условиях" in request.details.lower()
     replay = client.get(f"/api/calls/{created['session_id']}").json()
+    assert replay["request"]["details"] == request.details
     assert replay["request"]["parent_session_id"] == session_id
     assert replay["request"]["follow_up_action"] == action
 

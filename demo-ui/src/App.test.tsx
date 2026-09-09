@@ -155,6 +155,35 @@ describe('T2 personal assistant UI', () => {
     expect(screen.getByText('Предложить 11:00')).toBeInTheDocument()
   })
 
+  it('dismisses an explicit owner question locally with Промолчать without sending a response', async () => {
+    localStorage.setItem('t2.activeSession', 'demo_1')
+    render(<App />)
+    await screen.findByText('Набираем номер')
+    const question = { request_id: 'r-silent', question: 'Подтвердить встречу?', options: ['Да', 'Нет'] }
+    MockSocket.instance.emit(event(5, 'owner.question', question))
+    expect(await screen.findByText('Нужно ваше решение')).toBeInTheDocument()
+    for (const name of ['Да', 'Нет', 'Другое']) {
+      expect(screen.getByRole('button', { name })).toBeInTheDocument()
+    }
+    const callsBeforeDismissal = vi.mocked(fetch).mock.calls.length
+    await userEvent.click(screen.getByRole('button', { name: 'Промолчать' }))
+    expect(screen.queryByText('Нужно ваше решение')).not.toBeInTheDocument()
+    expect(screen.queryByText('Подтвердить встречу?')).not.toBeInTheDocument()
+    expect(screen.queryByText('Решение Армена')).not.toBeInTheDocument()
+    // Repeated delivery of the same question must not prompt again in this view.
+    fireEvent(window, new Event('focus'))
+    MockSocket.instance.emit(event(6, 'owner.question', question))
+    MockSocket.instance.emit(event(7, 'transcript.caller.final', { text: 'Алло?' }))
+    expect(await screen.findByText('Алло?')).toBeInTheDocument()
+    expect(screen.queryByText('Нужно ваше решение')).not.toBeInTheDocument()
+    expect(fetch).toHaveBeenCalledTimes(callsBeforeDismissal)
+    expect(vi.mocked(fetch).mock.calls.filter(([url, init]) =>
+      String(url).includes('/owner-response') && init?.method === 'POST',
+    )).toHaveLength(0)
+    MockSocket.instance.emit(event(8, 'owner.question', { ...question, request_id: 'r-next' }))
+    expect(await screen.findByText('Нужно ваше решение')).toBeInTheDocument()
+  })
+
   it.each([
     ['missing', undefined],
     ['empty', []],
@@ -167,7 +196,7 @@ describe('T2 personal assistant UI', () => {
     const answer = await screen.findByLabelText('Ваш ответ')
     expect(answer.tagName).toBe('TEXTAREA')
     expect(answer).toHaveFocus()
-    for (const name of ['Подтвердить', 'Отказаться', 'Другое', 'Назад']) {
+    for (const name of ['Подтвердить', 'Отказаться', 'Другое', 'Назад', 'Промолчать']) {
       expect(screen.queryByRole('button', { name })).not.toBeInTheDocument()
     }
     expect(screen.getByRole('button', { name: 'Отправить' })).toBeDisabled()

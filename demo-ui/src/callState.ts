@@ -3,6 +3,7 @@ import type { CallEvent, CallOutcome, Message, OwnerQuestion } from './types'
 export type CallState = {
   status: string
   messages: Message[]
+  dismissedQuestionIds: string[]
   question?: OwnerQuestion
   outcome?: CallOutcome
   recording?: string
@@ -13,7 +14,7 @@ export type CallState = {
   threadNotice?: string
 }
 
-export const initialCallState: CallState = { status: 'preparing', messages: [], archivedCalls: [], lastSeq: 0, ended: false }
+export const initialCallState: CallState = { status: 'preparing', messages: [], dismissedQuestionIds: [], archivedCalls: [], lastSeq: 0, ended: false }
 
 const text = (payload: Record<string, unknown>, key = 'text') => typeof payload[key] === 'string' ? payload[key].trim() : ''
 const rawText = (payload: Record<string, unknown>, key = 'text') => typeof payload[key] === 'string' ? payload[key] as string : ''
@@ -47,7 +48,12 @@ function reconcileAssistantFinal(messages: Message[], next: Message) {
   return copy
 }
 
-export function reduceCallEvent(state: CallState, event: CallEvent): CallState {
+export function reduceCallEvent(state: CallState, event: CallEvent | { type: 'question.dismiss' }): CallState {
+  if (event.type === 'question.dismiss') {
+    if (!state.question) return state
+    return { ...state, question: undefined, dismissedQuestionIds: [...state.dismissedQuestionIds, state.question.requestId] }
+  }
+  if (!('seq' in event)) return state
   if (event.type === 'session.reset') return initialCallState
   if (event.type === 'session.followup') return {
     ...initialCallState,
@@ -89,6 +95,7 @@ export function reduceCallEvent(state: CallState, event: CallEvent): CallState {
       return { ...base, messages: state.messages.map((item) => item.id === id ? { ...item, partial: false, interrupted: true } : item) }
     }
     case 'owner.question': {
+      if (state.dismissedQuestionIds.includes(String(payload.request_id ?? ''))) return base
       const options = Array.isArray(payload.options)
         ? payload.options.filter((item): item is string => typeof item === 'string' && Boolean(item.trim())).slice(0, 4)
         : []
