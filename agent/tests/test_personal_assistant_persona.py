@@ -35,7 +35,7 @@ def test_personal_assistant_persona_contract():
     assert persona["stt_language"] == "kk_ru"
     assert persona["wait_for_user_first"] is True
     assert persona["tts_intonation"] is False
-    assert persona["sip_trunk_id"] == "ST_T2TUcm8a2YbK"
+    assert persona["sip_trunk_id"] == "ST_p7hmPvtZPFFi"
     assert persona["sip_number"] == "9225"
     assert "после первой реплики собеседника" in prompt.lower()
     assert "не представляйся личным ассистентом" in prompt.lower()
