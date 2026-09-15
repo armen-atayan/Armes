@@ -45,6 +45,10 @@ def test_mir_ceramiki_male_callback_persona_contract():
     assert "явно подтверд" in lowered
     assert "не выдумывай" in lowered
     assert "город" in lowered
+    assert "«астанА» и «в астанЕ»" in prompt
+    assert "только с заглавной последней гласной" in lowered
+    assert "Астана" not in prompt
+    assert "Астане" not in prompt
     assert "наличие" in lowered
     assert "finalize_call" in prompt
     assert "end_call" in prompt
