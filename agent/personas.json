@@ -135,7 +135,7 @@
   "mir_ceramiki_anton": {
     "name": "Антон — Мир Керамики",
     "description": "Проактивный мужчина-консультант перезванивает по пропущенному звонку, выявляет потребность и предлагает визит в офис продаж.",
-    "voice": "clone:anton_m",
+    "voice": "clone:armen3",
     "llm_model": "gpt-5.6-luna",
     "llm_route": "default",
     "stt_language": "kk_ru",
