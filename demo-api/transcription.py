@@ -11,7 +11,7 @@ class Gen2BTranscriber:
         direct_key = os.getenv("GEN2B_STT_KEY", "")
         gateway_key = os.getenv("GEN2B_KEY", "")
         self.api_key = gateway_key if "ai-kz.gen2b.ai" in self.base_url else direct_key
-        self.model = os.getenv("GEN2B_STT_MODEL", "gen2asr")
+        self.model = os.getenv("GEN2B_STT_MODEL", "gen2b/stt")
 
     async def transcribe(self, audio: bytes, content_type: str) -> str:
         if not audio:

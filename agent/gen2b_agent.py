@@ -19,7 +19,7 @@ Uses:
   * turn_rescue patches — stop user turns from being silently dropped when
     they land during an uninterruptible agent reply
 - openai.LLM plugin pointed at ai-kz.gen2b.ai (LiteLLM proxy -> Gemini)
-- openai.STT plugin pointed at gen2asr (Gen2B's own STT)
+- openai.STT plugin pointed at gen2b/stt (Gen2B's own STT)
 - openai.TTS plugin pointed at gen2tts (Gen2B's own TTS, persona-selected voice)
 """
 import asyncio
@@ -271,7 +271,7 @@ GEN2B_STT_KEY = (
     if "ai-kz.gen2b.ai" in GEN2B_STT_BASE
     else _GEN2B_DIRECT_STT_KEY
 )
-GEN2B_STT_MODEL = os.environ.get("GEN2B_STT_MODEL", "gen2asr")
+GEN2B_STT_MODEL = os.environ.get("GEN2B_STT_MODEL", "gen2b/stt")
 GROQ_STT_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_STT_BASE = os.environ.get("GROQ_STT_BASE_URL", "https://api.groq.com/openai/v1")
 GROQ_STT_MODEL = os.environ.get("GROQ_STT_MODEL", "whisper-large-v3-turbo")
