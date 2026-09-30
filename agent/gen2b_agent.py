@@ -1243,7 +1243,7 @@ async def entrypoint(ctx: JobContext):
             raise RuntimeError("GEN2B_TTS_KEY is required for clone voices")
         tts_base = GEN2B_DIRECT_TTS_BASE
         tts_key = _GEN2B_DIRECT_TTS_KEY
-        tts_model = "gen2tts"
+        tts_model = "gen2b/tts"
         logger.info("TTS provider=gen2-direct model=%s voice=%s", tts_model, call_config["voice"])
 
     llm_route = call_config.get("llm_route", "default")
