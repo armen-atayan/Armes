@@ -4,6 +4,37 @@
 
 A desktop browser page in an iPhone frame. A presenter creates a personal-assistant call, sees caller STT and assistant TTS text live, answers `ask_owner` callbacks in the page, then receives the final outcome and recording — without Telegram messages for that web-originated call.
 
+## Voice LLM deployment (Hermes, after review)
+
+All 13 Gen2B personas use exactly `claude-haiku-5-5` with `llm_route=anthropic`.
+Missing persona route/model overrides default to Anthropic/Haiku 5.5; the existing
+`GEN2B_LLM_MODEL` environment override still applies to a missing model field.
+The shared worker factory uses the native Anthropic plugin and fixes the endpoint
+to `https://api.anthropic.com`. It requires a dedicated `ANTHROPIC_API_KEY` and
+fails clearly when absent or blank; gateway credentials are never substituted.
+See [the non-secret LLM environment example](agent/llm.env.example).
+
+Hermes installs `agent/requirements.txt` and propagates the dedicated credential
+to the worker service environment after review. The Anthropic plugin is pinned
+to `1.6.7`, matching the inspected Agents/OpenAI plugins; SDK `anthropic==0.125.0`
+is pinned with `thinking` and `output_config` support. SDK 1.12.1 uses httpx2 and
+rejects this plugin's httpx.AsyncClient, so do not upgrade it independently.
+The native plugin's `chat(extra_kwargs=...)` sends `thinking={"type":"adaptive"}`
+and `output_config={"effort":"low"}` on each streamed request, with automatic
+tool choice. `none` reasoning effort is not sent to Anthropic. Explicit legacy
+`gateway` and `default` routes retain their OpenAI-compatible endpoints,
+credentials, and reasoning configuration. STT/TTS/SIP configuration is unchanged.
+
+The offline suite checks the real plugin's generated streaming request and SDK
+signature with a mocked provider boundary. It does not establish production
+model access or validate streamed thinking/tool-result round trips. Hermes owns
+production preflight and the live native-plugin test, including `ask_owner`,
+`finalize_call`/`end_call`, follow-up turns, greeting context, and credential
+propagation, before deployment. Plugin 1.6.7's no-prefill model list predates
+Haiku 5.5; HaikuChatContext therefore uses LiveKit's native trailing-user-message
+serialization on a copy of the history, covered by a regression test. No model
+alias or gateway fallback should replace the requested model if preflight fails.
+
 ## Start / restart
 
 ```bash

@@ -1,3 +1,5 @@
 livekit-agents[openai,silero]~=1.6
+livekit-plugins-anthropic==1.6.7
+anthropic==0.125.0
 requests~=2.34
 numpy~=2.4

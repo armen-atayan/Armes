@@ -18,7 +18,7 @@ Uses:
     from background noise / backchannel, drives session.interrupt(force=True)
   * turn_rescue patches — stop user turns from being silently dropped when
     they land during an uninterruptible agent reply
-- openai.LLM plugin pointed at ai-kz.gen2b.ai (LiteLLM proxy -> Gemini)
+- Native Anthropic LLM by default; legacy OpenAI-compatible routes retained
 - openai.STT plugin pointed at gen2b/stt (Gen2B's own STT)
 - openai.TTS plugin pointed at gen2tts (Gen2B's own TTS, persona-selected voice)
 """
@@ -59,6 +59,7 @@ from livekit.agents import (
 from livekit.agents.voice import room_io
 from livekit.agents.utils.participant import wait_for_participant_attribute
 from livekit.plugins import openai
+from llm_factory import DEFAULT_LLM_MODEL, DEFAULT_LLM_ROUTE, create_llm
 from krisp import (
     FanoutVAD,
     KrispVivaFilterFrameProcessor,
@@ -250,15 +251,15 @@ async def apply_live_instruction(session: AgentSession, instruction: str) -> Non
     )
 
 
-# LLM may use a dedicated OpenAI-compatible provider.  Audio continues to use
+# Legacy LLM routes may use an OpenAI-compatible provider. Audio continues to use
 # GEN2B_BASE/GEN2B_KEY when its endpoints are routed through the Gen2B gateway.
 GEN2B_BASE = os.environ.get("GEN2B_BASE", "https://ai-kz.gen2b.ai/v1")
 GEN2B_KEY = os.environ.get("GEN2B_KEY", "")
 GEN2B_LLM_BASE = os.environ.get("GEN2B_LLM_BASE", GEN2B_BASE)
 GEN2B_LLM_KEY = os.environ.get("GEN2B_LLM_KEY", GEN2B_KEY)
-GEN2B_LLM_MODEL = os.environ.get("GEN2B_LLM_MODEL", "gemini/gemini-2.5-flash")
-# Voice replies prioritise first-audio latency; Terra must not spend tokens on
-# hidden reasoning before emitting the streamed answer.
+GEN2B_LLM_MODEL = os.environ.get("GEN2B_LLM_MODEL", DEFAULT_LLM_MODEL)
+# Legacy OpenAI-compatible routes only; native Anthropic uses adaptive thinking
+# with low effort in llm_factory.py.
 GEN2B_LLM_REASONING_EFFORT = os.environ.get("GEN2B_LLM_REASONING_EFFORT", "none")
 
 # STT/TTS now hit Gen2B's own STT/TTS boxes directly over NetBird VPN
@@ -616,7 +617,7 @@ def resolve_call_config(metadata_raw: str) -> dict[str, Any]:
         "persona_name": persona["name"],
         "voice": persona["voice"],
         "llm_model": persona.get("llm_model", GEN2B_LLM_MODEL),
-        "llm_route": persona.get("llm_route", "default"),
+        "llm_route": persona.get("llm_route", DEFAULT_LLM_ROUTE),
         "stt_language": persona.get("stt_language", "kk_ru_iso"),
         "tts_intonation": bool(persona.get("tts_intonation", True)),
         "wait_for_user_first": bool(persona.get("wait_for_user_first", False)),
@@ -1246,13 +1247,7 @@ async def entrypoint(ctx: JobContext):
         tts_model = "gen2b/tts"
         logger.info("TTS provider=gen2-direct model=%s voice=%s", tts_model, call_config["voice"])
 
-    llm_route = call_config.get("llm_route", "default")
-    if llm_route == "gateway":
-        llm_base = GEN2B_BASE
-        llm_key = GEN2B_KEY
-    else:
-        llm_base = GEN2B_LLM_BASE
-        llm_key = GEN2B_LLM_KEY
+    llm_route = call_config.get("llm_route", DEFAULT_LLM_ROUTE)
     logger.info(
         "LLM route=%s model=%s",
         llm_route,
@@ -1262,11 +1257,13 @@ async def entrypoint(ctx: JobContext):
     session = AgentSession(
         vad=session_vad,
         stt=session_stt,
-        llm=openai.LLM(
-            model=call_config["llm_model"],
+        llm=create_llm(
+            call_config,
+            gateway_base=GEN2B_BASE,
+            gateway_key=GEN2B_KEY,
+            default_base=GEN2B_LLM_BASE,
+            default_key=GEN2B_LLM_KEY,
             reasoning_effort=GEN2B_LLM_REASONING_EFFORT,
-            base_url=llm_base,
-            api_key=llm_key,
         ),
         tts=openai.TTS(
             model=tts_model,
