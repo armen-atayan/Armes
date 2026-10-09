@@ -827,6 +827,10 @@ class Gen2BAssistant(Agent):
                          if getattr(item, "role", None) == "user"), "")
         return booking_close_reason(text or "", outcome)
 
+    def _diagnostic_tool_blocked(self) -> bool:
+        return (getattr(self, "_room_name", "").startswith("diagnostic-pipeline-")
+                and getattr(self, "_owner_channel", "") == "web")
+
     @function_tool(flags=ToolFlag.CANCELLABLE)
     async def ask_owner(
         self,
@@ -859,6 +863,8 @@ class Gen2BAssistant(Agent):
         Возвращает JSON с action, question, context, response, request_id и instruction.
         Дождись результата перед зависимым решением.
         """
+        if self._diagnostic_tool_blocked():
+            return "Действия инструментов отключены в диагностическом сеансе."
         question, context = question.strip(), context.strip()
         clean_options: list[str] = []
         for option in options or infer_owner_options(question, context):
@@ -954,6 +960,8 @@ class Gen2BAssistant(Agent):
     ) -> str:
         """Зафиксировать итог звонка перед завершением. Доставлен в Telegram будет
         только после фактического завершения звонка (после end_call)."""
+        if self._diagnostic_tool_blocked():
+            return "Действия инструментов отключены в диагностическом сеансе."
         reason = self._booking_close_block(outcome)
         if reason:
             logger.warning("FINALIZE_BLOCKED room=%s reason=%s", self._room_name, reason)
@@ -972,6 +980,8 @@ class Gen2BAssistant(Agent):
     @function_tool
     async def end_call(self, ctx: RunContext) -> str:
         """Завершить телефонный звонок после финального итога или по просьбе собеседника."""
+        if self._diagnostic_tool_blocked():
+            return "Действия инструментов отключены в диагностическом сеансе."
         if getattr(self, "_hangup_started", False):
             return "Звонок уже завершается."
         latest_user_text = getattr(self, "_latest_user_text", None)
@@ -1453,6 +1463,8 @@ async def entrypoint(ctx: JobContext):
     session.on("user_state_changed", record_user_state)
     session.on("conversation_item_added", record_conversation_for_hangup)
 
+    from pipeline_diagnostics import attach_pipeline_diagnostics
+    attach_pipeline_diagnostics(session, session_stt, session.llm, session.tts, ctx.room.name)
     session.on("metrics_collected", record_pipeline_metrics)
     session.on("close", lambda *a: asyncio.create_task(on_close(*a)))
 
