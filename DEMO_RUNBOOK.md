@@ -19,9 +19,12 @@ to the worker service environment after review. The Anthropic plugin is pinned
 to `1.6.7`, matching the inspected Agents/OpenAI plugins; SDK `anthropic==0.125.0`
 is pinned with `thinking` and `output_config` support. SDK 1.12.1 uses httpx2 and
 rejects this plugin's httpx.AsyncClient, so do not upgrade it independently.
-The native plugin's `chat(extra_kwargs=...)` sends `thinking={"type":"adaptive"}`
-and `output_config={"effort":"low"}` on each streamed request, with automatic
-tool choice. `none` reasoning effort is not sent to Anthropic. Explicit legacy
+The native plugin's `chat(extra_kwargs=...)` sends `thinking={"type":"disabled"}`
+on each streamed request, with automatic tool choice. The previous adaptive/low
+configuration is no longer active; `output_config.effort` is not injected.
+Direct API probes confirmed zero `output_tokens_details.thinking_tokens`,
+streaming text/tool calls and tool-result continuation. `none` reasoning effort
+is not sent to Anthropic. Explicit legacy
 `gateway` and `default` routes retain their OpenAI-compatible endpoints,
 credentials, and reasoning configuration. STT/TTS/SIP configuration is unchanged.
 

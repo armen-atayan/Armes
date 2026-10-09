@@ -24,7 +24,7 @@ class HaikuLLM(anthropic.LLM):
     def chat(self, *, chat_ctx: ChatContext, extra_kwargs: NotGivenOr[dict[str, Any]] = NOT_GIVEN, **kwargs):
         # LiveKit Anthropic 1.6.7 exposes provider kwargs on chat(), not __init__.
         extra = dict(extra_kwargs) if is_given(extra_kwargs) else {}
-        extra.update(thinking={"type": "adaptive"}, output_config={"effort": "low"})
+        extra.update(thinking={"type": "disabled"})
         return super().chat(chat_ctx=HaikuChatContext(items=list(chat_ctx.items)), extra_kwargs=extra, **kwargs)
 
 

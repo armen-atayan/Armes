@@ -109,8 +109,8 @@ async def test_native_streaming_with_tools(factory, legacy, monkeypatch, config,
         inspect.signature(sdk.resources.messages.AsyncMessages.create).bind(None, **request)
         assert request['model'] == 'claude-haiku-5-5'
         assert request['stream'] is True
-        assert request['thinking'] == {'type': 'adaptive'}
-        assert request['output_config'] == {'effort': 'low'}
+        assert request['thinking'] == {'type': 'disabled'}
+        assert 'output_config' not in request
         assert request['tool_choice'] == {'type': 'auto'}
         assert request['tools'][0]['name'] == 'ask_owner'
         assert request['tools'][0]['input_schema']['required'] == ['question']
