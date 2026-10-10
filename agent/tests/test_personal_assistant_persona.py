@@ -30,8 +30,8 @@ def test_personal_assistant_persona_contract():
 
     assert persona["name"] == "Личный ассистент Армена Атаяна"
     assert persona["voice"] == "clone:armen3"
-    assert persona["llm_model"] == "claude-haiku-5-5"
-    assert persona["llm_route"] == "anthropic"
+    assert persona["llm_model"] == "gemini-2.5-flash"
+    assert persona["llm_route"] == "gateway"
     assert persona["stt_language"] == "kk_ru"
     assert persona["wait_for_user_first"] is True
     assert persona["tts_intonation"] is False

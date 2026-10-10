@@ -6,13 +6,19 @@ A desktop browser page in an iPhone frame. A presenter creates a personal-assist
 
 ## Voice LLM deployment (Hermes, after review)
 
-All 13 Gen2B personas use exactly `claude-haiku-5-5` with `llm_route=anthropic`.
-Missing persona route/model overrides default to Anthropic/Haiku 5.5; the existing
+All 13 Gen2B personas use exactly `gemini-2.5-flash` with `llm_route=gateway`.
+Missing persona route/model overrides default to Gemini/gateway; the existing
 `GEN2B_LLM_MODEL` environment override still applies to a missing model field.
-The shared worker factory uses the native Anthropic plugin and fixes the endpoint
-to `https://api.anthropic.com`. It requires a dedicated `ANTHROPIC_API_KEY` and
-fails clearly when absent or blank; gateway credentials are never substituted.
+The worker uses the OpenAI-compatible Gen2B gateway (`GEN2B_BASE` / `GEN2B_KEY`)
+with `GEN2B_LLM_REASONING_EFFORT=none`. Real tool-call and streamed tool-result
+continuation probes passed; the gateway did not report a numeric reasoning-token
+count, so absence of hidden thinking is not independently proven by usage.
 See [the non-secret LLM environment example](agent/llm.env.example).
+
+### Optional native Anthropic compatibility (not the fleet default)
+
+The explicit `anthropic` route fixes `https://api.anthropic.com` and requires
+its separate `ANTHROPIC_API_KEY`; gateway credentials are never substituted.
 
 Hermes installs `agent/requirements.txt` and propagates the dedicated credential
 to the worker service environment after review. The Anthropic plugin is pinned

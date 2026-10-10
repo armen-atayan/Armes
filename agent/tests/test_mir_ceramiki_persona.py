@@ -17,7 +17,7 @@ def test_mir_ceramiki_male_callback_persona_contract():
 
     assert persona["name"] == "Антон — Мир Керамики"
     assert persona["voice"] == "clone:armen3"
-    assert persona["llm_model"] == "claude-haiku-5-5"
+    assert persona["llm_model"] == "gemini-2.5-flash"
     assert persona["stt_language"] == "kk_ru"
     assert "пропущенный звонок" in greeting.lower()
     assert "Мир Керамики" in greeting

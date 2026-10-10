@@ -258,8 +258,8 @@ GEN2B_KEY = os.environ.get("GEN2B_KEY", "")
 GEN2B_LLM_BASE = os.environ.get("GEN2B_LLM_BASE", GEN2B_BASE)
 GEN2B_LLM_KEY = os.environ.get("GEN2B_LLM_KEY", GEN2B_KEY)
 GEN2B_LLM_MODEL = os.environ.get("GEN2B_LLM_MODEL", DEFAULT_LLM_MODEL)
-# Legacy OpenAI-compatible routes only; native Anthropic uses adaptive thinking
-# with low effort in llm_factory.py.
+# OpenAI-compatible routes use the effort below; optional native Anthropic
+# sends thinking=disabled in llm_factory.py.
 GEN2B_LLM_REASONING_EFFORT = os.environ.get("GEN2B_LLM_REASONING_EFFORT", "none")
 
 # STT/TTS now hit Gen2B's own STT/TTS boxes directly over NetBird VPN

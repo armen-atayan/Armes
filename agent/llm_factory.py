@@ -7,8 +7,8 @@ from livekit.agents.types import NOT_GIVEN, NotGivenOr
 from livekit.agents.utils import is_given
 from livekit.plugins import anthropic, openai
 
-DEFAULT_LLM_MODEL = "claude-haiku-5-5"
-DEFAULT_LLM_ROUTE = "anthropic"
+DEFAULT_LLM_MODEL = "gemini-2.5-flash"
+DEFAULT_LLM_ROUTE = "gateway"
 
 
 class HaikuChatContext(ChatContext):

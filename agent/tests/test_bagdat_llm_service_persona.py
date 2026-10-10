@@ -5,12 +5,12 @@ from pathlib import Path
 PERSONAS_PATH = Path(__file__).parents[1] / "personas.json"
 
 
-def test_all_personas_use_exact_haiku_5_5_anthropic_route():
+def test_all_personas_use_exact_gemini_2_5_flash_gateway_route():
     personas = json.loads(PERSONAS_PATH.read_text(encoding="utf-8"))
 
     assert personas
-    assert {persona["llm_model"] for persona in personas.values()} == {"claude-haiku-5-5"}
-    assert {persona["llm_route"] for persona in personas.values()} == {"anthropic"}
+    assert {persona["llm_model"] for persona in personas.values()} == {"gemini-2.5-flash"}
+    assert {persona["llm_route"] for persona in personas.values()} == {"gateway"}
 
 
 def test_bagdat_llm_service_persona_contract():
@@ -22,8 +22,8 @@ def test_bagdat_llm_service_persona_contract():
     )
 
     assert persona["voice"] == "clone:bagdat"
-    assert persona["llm_model"] == "claude-haiku-5-5"
-    assert persona["llm_route"] == "anthropic"
+    assert persona["llm_model"] == "gemini-2.5-flash"
+    assert persona["llm_route"] == "gateway"
     assert persona["stt_language"] == "kk_ru"
     assert persona["wait_for_user_first"] is True
     assert "Привет, Дима, это Багдат" in greeting

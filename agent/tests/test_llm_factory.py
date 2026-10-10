@@ -27,7 +27,7 @@ def legacy():
                 reasoning_effort='none')
 
 
-def test_missing_persona_overrides_use_anthropic(monkeypatch):
+def test_missing_persona_overrides_use_gemini_gateway(monkeypatch):
     personas = g.load_personas()
     for persona in personas.values():
         persona.pop('llm_model', None)
@@ -35,11 +35,11 @@ def test_missing_persona_overrides_use_anthropic(monkeypatch):
     monkeypatch.setattr(g, 'load_personas', lambda: personas)
     # The resolver legitimately honors the import-time environment override.
     # Pin it here so this test isolates missing persona fields, not shell state.
-    assert g.DEFAULT_LLM_MODEL == 'claude-haiku-5-5'
+    assert g.DEFAULT_LLM_MODEL == 'gemini-2.5-flash'
     monkeypatch.setattr(g, 'GEN2B_LLM_MODEL', g.DEFAULT_LLM_MODEL)
     for name in personas:
         cfg = g.resolve_call_config(json.dumps({'persona': name}))
-        assert (cfg['llm_model'], cfg['llm_route']) == ('claude-haiku-5-5', 'anthropic')
+        assert (cfg['llm_model'], cfg['llm_route']) == ('gemini-2.5-flash', 'gateway')
 
 
 def test_worker_uses_shared_factory():
@@ -58,7 +58,7 @@ def test_anthropic_requires_dedicated_key(factory, legacy, monkeypatch, key):
     else:
         monkeypatch.setenv('ANTHROPIC_API_KEY', key)
     with pytest.raises(ValueError, match='ANTHROPIC_API_KEY'):
-        factory.create_llm({}, **legacy)
+        factory.create_llm({'llm_route': 'anthropic', 'llm_model': 'claude-haiku-5-5'}, **legacy)
 
 
 @pytest.mark.parametrize('route', ['gateway', 'default'])
@@ -74,7 +74,7 @@ def test_legacy_routes_preserved(factory, legacy, monkeypatch, route):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('config', [{}, {'llm_route': 'anthropic', 'llm_model': 'claude-haiku-5-5'}])
+@pytest.mark.parametrize('config', [{'llm_route': 'anthropic', 'llm_model': 'claude-haiku-5-5'}])
 @pytest.mark.parametrize('trailing_assistant', [False, True])
 async def test_native_streaming_with_tools(factory, legacy, monkeypatch, config, trailing_assistant):
     monkeypatch.setenv('ANTHROPIC_API_KEY', 'anthropic-offline-test')
